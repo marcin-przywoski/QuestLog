@@ -1,0 +1,64 @@
+name: Continuous Delivery
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      repository-projects: write
+      checks: write
+      statuses: write
+      actions: write
+      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup dotnet 6
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "6"
+
+      - name: Build & publish (v6)
+        run: dotnet publish --configuration Release -o publish -r win-x64
+
+      - name: Install Velopack CLI
+        run: |
+          dotnet tool install -g vpk
+
+      - name: Download previous release for delta generation
+        run: |
+          vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+      - name: Create Velopack package with deltas
+        run: |
+          vpk pack -u QuestLog -v ${{ github.ref_name }} -p publish
+
+      - name: Create Github release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          gh release create "${{ github.ref_name }}"
+          --repo "${{ github.event.repository.full_name }}"
+          --title "${{ github.ref_name }}"
+          --verify-tag
+          --generate-notes
+
+      - name: Upload Velopack package to release
+        run: >
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --tag ${{ github.ref_name }} --publish --token ${{ secrets.GITHUB_TOKEN }} --merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+
+
