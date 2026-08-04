@@ -1,0 +1,45 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - 'master'
+      - 'development'
+      - 'feature/**'
+      - 'fix/**'
+    paths:
+      - '**.cs'
+      - '**.csproj'
+      - '**.axaml'
+  pull_request:
+    branches:
+      - 'master'
+      - 'development'
+      - 'feature/**'
+      - 'fix/**'
+    paths:
+      - '**.cs'
+      - '**.csproj'
+      - '**.axaml'
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+
+    - name: Setup .NET 6.x
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: "6"
+
+    - name: Run linter
+      run: dotnet format --verify-no-changes QuestLog.slnx
+
+    - name: Restore dependencies
+      run: dotnet restore QuestLog.slnx
+
+    - name: Build .NET 6
+      run: dotnet build QuestLog.slnx --no-restore
