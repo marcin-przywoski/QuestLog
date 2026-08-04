@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace QuestLog.Views;
+namespace QuestLog.GUI.Views;
 
 public partial class MainWindow : Window
 {

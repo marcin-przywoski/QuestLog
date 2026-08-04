@@ -4,10 +4,10 @@ using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
-using QuestLog.ViewModels;
-using QuestLog.Views;
+using QuestLog.GUI.ViewModels;
+using QuestLog.GUI.Views;
 
-namespace QuestLog;
+namespace QuestLog.GUI;
 
 public partial class App : Application
 {

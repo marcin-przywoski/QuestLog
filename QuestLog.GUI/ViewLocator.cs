@@ -2,9 +2,9 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using QuestLog.ViewModels;
+using QuestLog.GUI.ViewModels;
 
-namespace QuestLog;
+namespace QuestLog.GUI;
 
 /// <summary>
 /// Given a view model, returns the corresponding view if possible.

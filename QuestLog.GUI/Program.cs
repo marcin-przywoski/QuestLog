@@ -1,7 +1,7 @@
 ﻿using Avalonia;
 using System;
 
-namespace QuestLog;
+namespace QuestLog.GUI;
 
 sealed class Program
 {
