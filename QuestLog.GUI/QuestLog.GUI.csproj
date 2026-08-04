@@ -23,5 +23,8 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+
+    <!-- Auto Updates -->
+    <PackageReference Include="Velopack" Version="0.0.556" />
   </ItemGroup>
 </Project>
