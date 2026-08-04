@@ -11,6 +11,8 @@ using QuestLog.GUI.Models;
 
 namespace QuestLog.GUI.Services
 {
+    public class AppleScriptOutlookService : IEmailService
+    {
         private static async Task<string> ExecuteAppleScriptAsync(string script)
         {
             var processInfo = new ProcessStartInfo
@@ -49,4 +51,5 @@ namespace QuestLog.GUI.Services
             }
         }
 
+    }
 }
