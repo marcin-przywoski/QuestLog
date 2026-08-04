@@ -44,15 +44,15 @@ jobs:
         run: |
           vpk pack -u QuestLog -v ${{ github.ref_name }} -p publish
 
-      - name: Create Github release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: >
-          gh release create "${{ github.ref_name }}"
-          --repo "${{ github.event.repository.full_name }}"
-          --title "${{ github.ref_name }}"
-          --verify-tag
-          --generate-notes
+      # - name: Create Github release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   run: >
+      #     gh release create "${{ github.ref_name }}"
+      #     --repo "${{ github.event.repository.full_name }}"
+      #     --title "${{ github.ref_name }}"
+      #     --verify-tag
+      #     --generate-notes
 
       - name: Upload Velopack package to release
         run: >
