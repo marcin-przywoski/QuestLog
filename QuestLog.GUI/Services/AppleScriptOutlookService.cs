@@ -84,6 +84,40 @@ namespace QuestLog.GUI.Services
             }
         }
 
+        private static IEnumerable<Email> ParseEmails(string rawOutput)
+        {
+            var emails = new List<Email>();
+
+            if (string.IsNullOrWhiteSpace(rawOutput))
+                return emails;
+
+            var emailRecords = rawOutput.Split(new[] { "<<EMAIL>>" }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var record in emailRecords)
+            {
+                var parts = record.Split(new[] { "||" }, StringSplitOptions.None);
+
+                if (parts.Length >= 7)
+                {
+                    var email = new Email
+                    {
+                        Id = parts[0].Trim(),
+                        Subject = parts[1].Trim(),
+                        Sender = parts[2].Trim(),
+                        SenderEmail = parts[3].Trim(),
+                        ReceivedDate = ParseDate(parts[4].Trim()),
+                        IsRead = parts[5].Trim().Equals("true", StringComparison.OrdinalIgnoreCase),
+                        Body = parts[6].Trim(),
+                        Folder = "Inbox"
+                    };
+
+                    emails.Add(email);
+                }
+            }
+
+            return emails;
+        }
+
         private static DateTime ParseDate(string dateStr)
         {
             // AppleScript date format can vary
