@@ -16,6 +16,36 @@ namespace QuestLog.GUI.Services
     private const string GetEmailsScriptResource = "QuestLog.GUI.Resources.AppleScripts.GetEmails.applescript";
     private const string GetEmailByIdScriptResource = "QuestLog.GUI.Resources.AppleScripts.GetEmailById.applescript";
     private const string MarkAsReadScriptResource = "QuestLog.GUI.Resources.AppleScripts.MarkAsRead.applescript";
+
+        public async Task<IEnumerable<Email>> GetEmailsAsync(int count = 50)
+        {
+            var script = BuildGetEmailsScript(count, unreadOnly: false);
+            var result = await ExecuteAppleScriptAsync(script);
+            return ParseEmails(result);
+        }
+
+        public async Task<IEnumerable<Email>> GetUnreadEmailsAsync(int count = 50)
+        {
+            var script = BuildGetEmailsScript(count, unreadOnly: true);
+            var result = await ExecuteAppleScriptAsync(script);
+            return ParseEmails(result);
+        }
+
+        public async Task<Email?> GetEmailByIdAsync(string id)
+        {
+            var script = BuildGetEmailByIdScript(id);
+            var result = await ExecuteAppleScriptAsync(script);
+            var emails = ParseEmails(result);
+            return emails.FirstOrDefault();
+        }
+
+        public async Task<bool> MarkAsReadAsync(string id)
+        {
+            var script = BuildMarkAsReadScript(id);
+            var result = await ExecuteAppleScriptAsync(script);
+            return result.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+        }
+
         private static string BuildGetEmailsScript(int count, bool unreadOnly)
         {
             var filterClause = unreadOnly ? "whose is read is false" : "";
