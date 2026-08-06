@@ -1,6 +1,6 @@
-﻿namespace QuestLog.GUI.ViewModels;
-
-public partial class MainWindowViewModel : ViewModelBase
+﻿namespace QuestLog.GUI.ViewModels
 {
-    public string Greeting { get; } = "Welcome to Avalonia!";
+    public partial class MainWindowViewModel : ViewModelBase
+    {
+    }
 }
