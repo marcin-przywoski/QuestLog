@@ -84,5 +84,28 @@ namespace QuestLog.GUI.Services
             }
         }
 
+        private static DateTime ParseDate(string dateStr)
+        {
+            // AppleScript date format can vary
+            string[] formats = {
+                "EEEE, MMMM d, yyyy 'at' h:mm:ss a",
+                "yyyy-MM-dd HH:mm:ss",
+                "M/d/yyyy h:mm:ss tt",
+                "d MMMM yyyy HH:mm:ss",
+                "MMMM d, yyyy h:mm:ss tt"
+            };
+
+            if (DateTime.TryParse(dateStr, out var result))
+                return result;
+
+            foreach (var format in formats)
+            {
+                if (DateTime.TryParseExact(dateStr, format, CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out result))
+                    return result;
+            }
+
+            return DateTime.MinValue;
+        }
     }
 }
