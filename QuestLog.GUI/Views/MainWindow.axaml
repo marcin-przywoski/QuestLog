@@ -1,20 +1,149 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:QuestLog.GUI.ViewModels"
+        xmlns:models="using:QuestLog.GUI.Models"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
         x:Class="QuestLog.GUI.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="QuestLog.GUI">
+        Title="QuestLog"
+        Width="1000" Height="600">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
+        <vm:MainWindowViewModel ShowUnreadOnly="True" StatusMessage="Loaded 3 email(s)">
+            <vm:MainWindowViewModel.Emails>
+                <models:Email Id="email-001"
+                              Subject="Project kickoff and next steps"
+                              Sender="Elena Rodriguez"
+                              SenderEmail="elena.rodriguez@example.com"
+                              ReceivedDate="2026-08-05T09:24:00"
+                              Body="Thanks for joining the kickoff. I have attached the initial scope and outlined the next steps for the team. Please share any questions before Friday."
+                              IsRead="False"
+                              Folder="Inbox"/>
+                <models:Email Id="email-002"
+                              Subject="Design review notes"
+                              Sender="Marcus Chen"
+                              SenderEmail="marcus.chen@example.com"
+                              ReceivedDate="2026-08-04T16:10:00"
+                              Body="The updated flow looks good. I added a few notes about the empty state and the loading experience for us to review."
+                              IsRead="False"
+                              Folder="Inbox"/>
+                <models:Email Id="email-003"
+                              Subject="Weekly team update"
+                              Sender="Priya Shah"
+                              SenderEmail="priya.shah@example.com"
+                              ReceivedDate="2026-08-04T08:45:00"
+                              Body="A quick update from this week: the integration is on track, and the remaining tasks are ready for validation."
+                              IsRead="True"
+                              Folder="Inbox"/>
+            </vm:MainWindowViewModel.Emails>
+            <vm:MainWindowViewModel.SelectedEmail>
+                <models:Email Id="email-001"
+                              Subject="Project kickoff and next steps"
+                              Sender="Elena Rodriguez"
+                              SenderEmail="elena.rodriguez@example.com"
+                              ReceivedDate="2026-08-05T09:24:00"
+                              Body="Thanks for joining the kickoff. I have attached the initial scope and outlined the next steps for the team. Please share any questions before Friday."
+                              IsRead="False"
+                              Folder="Inbox"/>
+            </vm:MainWindowViewModel.SelectedEmail>
+        </vm:MainWindowViewModel>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <Grid RowDefinitions="Auto,*,Auto">
+        
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="#f0f0f0" Padding="10">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <Button Content="Load Emails" 
+                        Command="{Binding LoadEmailsCommand}"
+                        IsEnabled="{Binding !IsLoading}"
+                        Padding="15,8"/>
+                <Button Content="Mark as Read" 
+                        Command="{Binding MarkAsReadCommand}"
+                        IsEnabled="{Binding SelectedEmail, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Padding="15,8"/>
+                <CheckBox Content="Show Unread Only" 
+                          IsChecked="{Binding ShowUnreadOnly}"
+                          VerticalAlignment="Center"
+                          Margin="20,0,0,0"/>
+                <ProgressBar IsIndeterminate="True" 
+                             IsVisible="{Binding IsLoading}"
+                             Width="100"
+                             VerticalAlignment="Center"
+                             Margin="20,0,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1" ColumnDefinitions="350,*">
+            
+            <!-- Email List -->
+            <Border Grid.Column="0" BorderBrush="#e0e0e0" BorderThickness="0,0,1,0">
+                <ListBox ItemsSource="{Binding Emails}" 
+                         SelectedItem="{Binding SelectedEmail}"
+                         Background="White">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:Email">
+                            <Border Padding="10" BorderBrush="#e8e8e8" BorderThickness="0,0,0,1">
+                                <StackPanel Spacing="4">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" 
+                                                   Text="{Binding Sender}" 
+                                                   FontWeight="{Binding IsRead, Converter={StaticResource BoolToFontWeightConverter}}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Grid.Column="1" 
+                                                   Text="{Binding ReceivedDate, StringFormat={}{0:MM/dd HH:mm}}"
+                                                   Foreground="Gray"
+                                                   FontSize="11"/>
+                                    </Grid>
+                                    <TextBlock Text="{Binding Subject}" 
+                                               FontWeight="{Binding IsRead, Converter={StaticResource BoolToFontWeightConverter}}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Body}" 
+                                               Foreground="Gray"
+                                               FontSize="12"
+                                               MaxLines="2"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+            <!-- Email Detail -->
+            <Border Grid.Column="1" Background="White" Padding="20">
+                <ScrollViewer IsVisible="{Binding SelectedEmail, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <StackPanel Spacing="15" DataContext="{Binding SelectedEmail}">
+                        <TextBlock Text="{Binding Subject}" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"/>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="From:" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding Sender}"/>
+                            <TextBlock Text="{Binding SenderEmail, StringFormat='&lt;{0}&gt;'}" Foreground="Gray"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Date:" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding ReceivedDate, StringFormat='dddd, MMMM d, yyyy h:mm tt'}"/>
+                        </StackPanel>
+                        <Separator Margin="0,10"/>
+                        <TextBlock Text="{Binding Body}" 
+                                   TextWrapping="Wrap"
+                                   LineHeight="22"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="#f0f0f0" Padding="10,5">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="Gray"/>
+        </Border>
+    </Grid>
 
 </Window>
