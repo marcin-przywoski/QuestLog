@@ -158,15 +158,19 @@ namespace QuestLog.GUI.Services
                 "d MMMM yyyy HH:mm:ss",
                 "MMMM d, yyyy h:mm:ss tt"
             };
-
+            ///TODO: Not perfect solution - will need to improve date parsing for different locales and formats
             if (DateTime.TryParse(dateStr, out var result))
+            {
                 return result;
+            }
 
             foreach (var format in formats)
             {
                 if (DateTime.TryParseExact(dateStr, format, CultureInfo.InvariantCulture,
                     DateTimeStyles.None, out result))
+                {
                     return result;
+                }
             }
 
             return DateTime.MinValue;
