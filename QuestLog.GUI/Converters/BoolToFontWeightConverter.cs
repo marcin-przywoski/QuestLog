@@ -13,7 +13,7 @@ namespace QuestLog.GUI.Converters
             {
                 return isRead ? FontWeight.Normal : FontWeight.Bold;
             }
-            
+
             return FontWeight.Normal;
         }
 
