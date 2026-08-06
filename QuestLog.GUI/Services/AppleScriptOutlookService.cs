@@ -16,6 +16,27 @@ namespace QuestLog.GUI.Services
     private const string GetEmailsScriptResource = "QuestLog.GUI.Resources.AppleScripts.GetEmails.applescript";
     private const string GetEmailByIdScriptResource = "QuestLog.GUI.Resources.AppleScripts.GetEmailById.applescript";
     private const string MarkAsReadScriptResource = "QuestLog.GUI.Resources.AppleScripts.MarkAsRead.applescript";
+        private static string BuildGetEmailsScript(int count, bool unreadOnly)
+        {
+            var filterClause = unreadOnly ? "whose is read is false" : "";
+
+            return LoadScript(GetEmailsScriptResource)
+                .Replace("__COUNT__", count.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
+                .Replace("__FILTER_CLAUSE__", filterClause, StringComparison.Ordinal);
+        }
+
+        private static string BuildGetEmailByIdScript(string id)
+        {
+            return LoadScript(GetEmailByIdScriptResource)
+                .Replace("__MESSAGE_ID__", id, StringComparison.Ordinal);
+        }
+
+        private static string BuildMarkAsReadScript(string id)
+        {
+            return LoadScript(MarkAsReadScriptResource)
+                .Replace("__MESSAGE_ID__", id, StringComparison.Ordinal);
+        }
+
         private static string LoadScript(string resourceName)
         {
             var assembly = typeof(AppleScriptOutlookService).Assembly;
