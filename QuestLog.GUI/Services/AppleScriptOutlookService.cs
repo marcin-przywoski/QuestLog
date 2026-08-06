@@ -16,6 +16,14 @@ namespace QuestLog.GUI.Services
     private const string GetEmailsScriptResource = "QuestLog.GUI.Resources.AppleScripts.GetEmails.applescript";
     private const string GetEmailByIdScriptResource = "QuestLog.GUI.Resources.AppleScripts.GetEmailById.applescript";
     private const string MarkAsReadScriptResource = "QuestLog.GUI.Resources.AppleScripts.MarkAsRead.applescript";
+        private static string LoadScript(string resourceName)
+        {
+            var assembly = typeof(AppleScriptOutlookService).Assembly;
+            using var stream = assembly.GetManifestResourceStream(resourceName)
+                ?? throw new InvalidOperationException($"Embedded AppleScript resource '{resourceName}' was not found.");
+            using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+            return reader.ReadToEnd();
+        }
 
         private static async Task<string> ExecuteAppleScriptAsync(string script)
         {
