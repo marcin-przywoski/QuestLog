@@ -72,7 +72,9 @@ namespace QuestLog.GUI.ViewModels
         private async Task MarkAsReadAsync()
         {
             if (SelectedEmail == null)
+            {
                 return;
+            }
 
             try
             {

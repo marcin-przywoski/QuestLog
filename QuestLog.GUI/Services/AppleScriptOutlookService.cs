@@ -119,7 +119,9 @@ namespace QuestLog.GUI.Services
             var emails = new List<Email>();
 
             if (string.IsNullOrWhiteSpace(rawOutput))
+            {
                 return emails;
+            }
 
             var emailRecords = rawOutput.Split(new[] { "<<EMAIL>>" }, StringSplitOptions.RemoveEmptyEntries);
 
