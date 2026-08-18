@@ -152,26 +152,38 @@ namespace QuestLog.GUI.Services
 
         private static DateTime ParseDate(string dateStr)
         {
-            // AppleScript date format can vary
+            var localizedCultures = new[]
+            {
+                CultureInfo.CurrentCulture,
+                CultureInfo.GetCultureInfo("pl-PL")
+            };
+
+            foreach (var culture in localizedCultures)
+            {
+                if (DateTime.TryParse(dateStr, culture, DateTimeStyles.AllowWhiteSpaces, out var localizedResult))
+                {
+                    return localizedResult;
+                }
+            }
+
             string[] formats = {
                 "EEEE, MMMM d, yyyy 'at' h:mm:ss a",
+                "dddd, d MMMM yyyy 'o' HH:mm:ss",
                 "yyyy-MM-dd HH:mm:ss",
                 "M/d/yyyy h:mm:ss tt",
                 "d MMMM yyyy HH:mm:ss",
                 "MMMM d, yyyy h:mm:ss tt"
             };
-            ///TODO: Not perfect solution - will need to improve date parsing for different locales and formats
-            if (DateTime.TryParse(dateStr, out var result))
-            {
-                return result;
-            }
 
             foreach (var format in formats)
             {
-                if (DateTime.TryParseExact(dateStr, format, CultureInfo.InvariantCulture,
-                    DateTimeStyles.None, out result))
+                foreach (var culture in localizedCultures)
                 {
-                    return result;
+                    if (DateTime.TryParseExact(dateStr, format, culture,
+                        DateTimeStyles.AllowWhiteSpaces, out var result))
+                    {
+                        return result;
+                    }
                 }
             }
 
