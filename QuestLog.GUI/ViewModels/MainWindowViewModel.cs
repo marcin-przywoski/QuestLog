@@ -91,5 +91,9 @@ namespace QuestLog.GUI.ViewModels
             }
         }
 
+        partial void OnShowUnreadOnlyChanged(bool value)
+        {
+            _ = LoadEmailsAsync();
+        }
     }
 }
