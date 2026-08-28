@@ -16,6 +16,7 @@ namespace QuestLog.GUI.Services
         private const string GetEmailsScriptResource = "QuestLog.GUI.Resources.AppleScripts.GetEmails.applescript";
         private const string GetEmailByIdScriptResource = "QuestLog.GUI.Resources.AppleScripts.GetEmailById.applescript";
         private const string MarkAsReadScriptResource = "QuestLog.GUI.Resources.AppleScripts.MarkAsRead.applescript";
+        private const string AppleScriptPath = "/usr/bin/osascript";
 
         public async Task<IEnumerable<Email>> GetEmailsAsync(int count = 50)
         {
@@ -78,9 +79,11 @@ namespace QuestLog.GUI.Services
 
         private static async Task<string> ExecuteAppleScriptAsync(string script)
         {
+            EnsureAppleScriptIsSupported();
+
             var processInfo = new ProcessStartInfo
             {
-                FileName = "/usr/bin/osascript",
+                FileName = AppleScriptPath,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -92,25 +95,30 @@ namespace QuestLog.GUI.Services
             processInfo.ArgumentList.Add(script);
 
             using var process = new Process { StartInfo = processInfo };
+            process.Start();
+            var output = await process.StandardOutput.ReadToEndAsync();
+            var error = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
 
-            try
+            if (process.ExitCode != 0)
             {
-                process.Start();
-                var output = await process.StandardOutput.ReadToEndAsync();
-                var error = await process.StandardError.ReadToEndAsync();
-                await process.WaitForExitAsync();
-
-                if (process.ExitCode != 0 && !string.IsNullOrEmpty(error))
-                {
-                    Console.WriteLine($"AppleScript error: {error}");
-                }
-
-                return output;
+                var message = string.IsNullOrWhiteSpace(error) ? output : error;
+                throw new InvalidOperationException($"AppleScript execution failed with exit code {process.ExitCode}: {message.Trim()}");
             }
-            catch (Exception ex)
+
+            return output;
+        }
+
+        private static void EnsureAppleScriptIsSupported()
+        {
+            if (!OperatingSystem.IsMacOS())
             {
-                Console.WriteLine($"Failed to execute AppleScript: {ex.Message}");
-                return string.Empty;
+                throw new PlatformNotSupportedException("Outlook integration requires macOS.");
+            }
+
+            if (!File.Exists(AppleScriptPath))
+            {
+                throw new FileNotFoundException("Outlook integration requires /usr/bin/osascript.", AppleScriptPath);
             }
         }
 
@@ -127,7 +135,7 @@ namespace QuestLog.GUI.Services
 
             foreach (var record in emailRecords)
             {
-                var parts = record.Split(new[] { "||" }, StringSplitOptions.None);
+                var parts = record.Split(new[] { "||" }, 7, StringSplitOptions.None);
 
                 if (parts.Length >= 7)
                 {

@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:QuestLog.GUI.ViewModels"
         xmlns:models="using:QuestLog.GUI.Models"
+        xmlns:converters="clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
@@ -63,7 +64,7 @@
                         Padding="15,8"/>
                 <Button Content="Mark as Read" 
                         Command="{Binding MarkAsReadCommand}"
-                        IsEnabled="{Binding SelectedEmail, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        IsEnabled="{Binding SelectedEmail, Converter={x:Static converters:ObjectConverters.IsNotNull}}"
                         Padding="15,8"/>
                 <CheckBox Content="Show Unread Only" 
                           IsChecked="{Binding ShowUnreadOnly}"
@@ -116,7 +117,7 @@
 
             <!-- Email Detail -->
             <Border Grid.Column="1" Background="White" Padding="20">
-                <ScrollViewer IsVisible="{Binding SelectedEmail, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <ScrollViewer IsVisible="{Binding SelectedEmail, Converter={x:Static converters:ObjectConverters.IsNotNull}}">
                     <StackPanel Spacing="15" DataContext="{Binding SelectedEmail}">
                         <TextBlock Text="{Binding Subject}" 
                                    FontSize="20" 

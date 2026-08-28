@@ -79,11 +79,27 @@ namespace QuestLog.GUI.ViewModels
             try
             {
                 var success = await _emailService.MarkAsReadAsync(SelectedEmail.Id);
-                if (success)
+                if (!success)
                 {
-                    SelectedEmail.IsRead = true;
-                    StatusMessage = "Email marked as read";
+                    StatusMessage = "Failed to mark email as read";
+                    return;
                 }
+
+                var selectedEmail = SelectedEmail;
+                selectedEmail.IsRead = true;
+
+                if (ShowUnreadOnly)
+                {
+                    var selectedIndex = Emails.IndexOf(selectedEmail);
+                    Emails.Remove(selectedEmail);
+                    SelectedEmail = Emails.Count == 0
+                        ? null
+                        : Emails[Math.Min(selectedIndex, Emails.Count - 1)];
+                    StatusMessage = "Email marked as read and removed from unread list";
+                    return;
+                }
+
+                StatusMessage = "Email marked as read";
             }
             catch (Exception ex)
             {
