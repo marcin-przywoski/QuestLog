@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
 using QuestLog.GUI.Interfaces;
@@ -12,7 +11,6 @@ using QuestLog.GUI.Models;
 
 namespace QuestLog.GUI.Services
 {
-    [SupportedOSPlatform("macOS")]
     public class AppleScriptOutlookService : IEmailService
     {
         private const string GetEmailsScriptResource = "QuestLog.GUI.Resources.AppleScripts.GetEmails.applescript";
