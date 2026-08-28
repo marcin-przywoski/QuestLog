@@ -1,11 +1,12 @@
 using Avalonia.Controls;
 
-namespace QuestLog.GUI.Views;
-
-public partial class MainWindow : Window
+namespace QuestLog.GUI.Views
 {
-    public MainWindow()
+    public partial class MainWindow : Window
     {
-        InitializeComponent();
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
     }
 }
