@@ -1,33 +1,101 @@
 name: Continuous Delivery
 
 on:
+  # Automatic release: GitVersion decides the version from the commit history.
+  workflow_dispatch:
+  # Manual override: pushing an explicit tag releases exactly that version.
   push:
     tags:
       - "*.*.*"
+
+concurrency:
+  group: continuous-delivery
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   build-and-release:
     runs-on: windows-latest
     permissions:
-      contents: write
-      pull-requests: write
-      repository-projects: write
-      checks: write
-      statuses: write
-      actions: write
-      deployments: write
+      contents: write       # push tags and create releases
+      issues: write         # create and close the release milestone
+      pull-requests: write  # read merged pull requests for the release notes
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          # GitVersion derives the version from the commit history, so it needs
+          # every commit and tag rather than the default shallow clone.
+          fetch-depth: 0
 
-      - name: Setup dotnet 6
+      - name: Setup dotnet
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: "6"
+          # 6.x builds the application, 8.x runs the GitTools .NET tools.
+          dotnet-version: |
+            6.0.x
+            8.0.x
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Calculate version
+        # Publishes every calculated value as a GitVersion_* environment
+        # variable for the steps below.
+        run: dotnet tool run dotnet-gitversion -output buildserver -nofetch
+
+      - name: Resolve release version
+        env:
+          # Never interpolate a ref name straight into a shell script.
+          PUSHED_TAG: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          if [ "$REF_TYPE" = "tag" ]; then
+            version="$PUSHED_TAG"
+          else
+            version="$GitVersion_MajorMinorPatch"
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$version' is not a MAJOR.MINOR.PATCH version"
+            exit 1
+          fi
+
+          echo "Releasing QuestLog $version"
+          {
+            echo "RELEASE_VERSION=$version"
+            echo "RELEASE_ASSEMBLY_VERSION=$version.0"
+            echo "REPO_OWNER=${GITHUB_REPOSITORY%%/*}"
+            echo "REPO_NAME=${GITHUB_REPOSITORY##*/}"
+          } >> "$GITHUB_ENV"
+
+      - name: Create and push tag
+        if: github.ref_type != 'tag'
+        run: |
+          if git rev-parse -q --verify "refs/tags/$RELEASE_VERSION" >/dev/null; then
+            echo "Tag $RELEASE_VERSION already exists, reusing it."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$RELEASE_VERSION" -m "QuestLog $RELEASE_VERSION"
+            git push origin "refs/tags/$RELEASE_VERSION"
+          fi
 
       - name: Build & publish (v6)
-        run: dotnet publish --configuration Release -o publish -r win-x64
+        run: >
+          dotnet publish QuestLog.GUI/QuestLog.GUI.csproj
+          --configuration Release
+          -r win-x64
+          -o publish
+          -p:Version=$RELEASE_VERSION
+          -p:AssemblyVersion=$RELEASE_ASSEMBLY_VERSION
+          -p:FileVersion=$RELEASE_ASSEMBLY_VERSION
+          -p:InformationalVersion=$RELEASE_VERSION+Sha.$GITHUB_SHA
+          -p:IncludeSourceRevisionInInformationalVersion=false
 
       - name: Install Velopack CLI
         run: |
@@ -42,23 +110,56 @@ jobs:
 
       - name: Create Velopack package with deltas
         run: |
-          vpk pack -u QuestLog -v ${{ github.ref_name }} -p publish
+          vpk pack -u QuestLog -v "$RELEASE_VERSION" -p publish
 
-      - name: Create Github release
+      - name: Ensure release milestone exists
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/milestones?state=all" --paginate --jq '.[].title' \
+              | grep -Fxq "$RELEASE_VERSION"; then
+            echo "Milestone $RELEASE_VERSION already exists."
+          else
+            echo "Creating milestone $RELEASE_VERSION."
+            gh api --method POST "repos/$GITHUB_REPOSITORY/milestones" -f title="$RELEASE_VERSION" --silent
+          fi
+
+      - name: Draft release notes
+        # Builds the notes from the issues and pull requests in the milestone,
+        # using the sections configured in GitReleaseManager.yaml.
+        env:
+          RELEASE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >
-          gh release create "${{ github.ref_name }}"
-          --repo "${{ github.event.repository.full_name }}"
-          --title "${{ github.ref_name }}"
-          --verify-tag
-          --generate-notes
+          dotnet tool run dotnet-gitreleasemanager create
+          --token "$RELEASE_TOKEN"
+          -o "$REPO_OWNER"
+          -r "$REPO_NAME"
+          -m "$RELEASE_VERSION"
+          -n "$RELEASE_VERSION"
+          -c "$GITHUB_SHA"
+
+      - name: Publish release
+        env:
+          RELEASE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          dotnet tool run dotnet-gitreleasemanager publish
+          --token "$RELEASE_TOKEN"
+          -o "$REPO_OWNER"
+          -r "$REPO_NAME"
+          -t "$RELEASE_VERSION"
 
       - name: Upload Velopack package to release
         run: >
-          vpk upload github --repoUrl https://github.com/${{ github.repository }} --tag ${{ github.ref_name }} --publish --token ${{ secrets.GITHUB_TOKEN }} --merge
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --tag "$RELEASE_VERSION" --token ${{ secrets.GITHUB_TOKEN }} --publish --merge
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
 
-
+      - name: Close milestone
+        env:
+          RELEASE_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          dotnet tool run dotnet-gitreleasemanager close
+          --token "$RELEASE_TOKEN"
+          -o "$REPO_OWNER"
+          -r "$REPO_NAME"
+          -m "$RELEASE_VERSION"

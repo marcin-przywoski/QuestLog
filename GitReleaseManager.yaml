@@ -1,0 +1,91 @@
+# GitReleaseManager configuration for QuestLog.
+# Docs: https://gittools.github.io/GitReleaseManager/docs/
+#
+# Release notes are generated from the issues and pull requests attached to the
+# GitHub milestone whose name matches the version produced by GitVersion
+# (for example milestone "0.1.0" -> tag "0.1.0" -> release "0.1.0").
+#
+# Labels below intentionally mirror .github/release.yml so that an issue only
+# ever has to be labelled once.
+default-branch: master
+
+create:
+  # Early releases may have no issues attached to their milestone; without this
+  # GitReleaseManager fails instead of publishing an empty set of notes.
+  allow-milestone-without-issues: true
+  allow-update-to-published: false
+  include-contributors: true
+
+  include-footer: true
+  footer-heading: Installing QuestLog {milestone}
+  footer-content: |
+    Download the installer from the assets below, or let an existing
+    installation update itself — QuestLog ships with Velopack auto-updates.
+  milestone-replace-text: '{milestone}'
+
+  # Off because the release assets are uploaded by Velopack after the notes
+  # have been drafted; GitReleaseManager can only hash assets it uploads
+  # itself (via `create --assets`), so the section would always come out empty.
+  include-sha-section: false
+
+close:
+  # Leave the milestone due date untouched and do not comment on every closed
+  # issue. Flip these on if you want GitReleaseManager to announce releases.
+  set-due-date: false
+  use-issue-comments: false
+
+# Issues carrying these labels appear in the release notes.
+issue-labels-include:
+  - breaking
+  - feature
+  - enhancement
+  - bugfix
+  - dependencies
+
+# Issues carrying these labels are left out of the release notes.
+issue-labels-exclude:
+  - ignore-for-release
+  - release
+
+# Section headings used for each label, matching .github/release.yml.
+issue-labels-alias:
+  - name: breaking
+    header: Breaking Change
+    plural: Breaking Changes
+  - name: feature
+    header: New Feature
+    plural: New Features
+  - name: enhancement
+    header: Enhancement
+    plural: Enhancements
+  - name: bugfix
+    header: Fix
+    plural: Fixes
+  - name: dependencies
+    header: Dependency Update
+    plural: Dependency Updates
+
+# Labels created by `dotnet gitreleasemanager label`, so a fresh clone of the
+# repository ends up with exactly the labels the sections above expect.
+labels:
+  - name: breaking
+    description: Change that breaks backwards compatibility
+    color: b60205
+  - name: feature
+    description: Request for a new feature
+    color: 84b6eb
+  - name: enhancement
+    description: Improvement of an existing feature
+    color: 207de5
+  - name: bugfix
+    description: Something isn't working
+    color: ee0701
+  - name: dependencies
+    description: Dependency update
+    color: 0366d6
+  - name: ignore-for-release
+    description: Excluded from the generated release notes
+    color: cfd3d7
+  - name: release
+    description: Release tracking issue
+    color: 006b75

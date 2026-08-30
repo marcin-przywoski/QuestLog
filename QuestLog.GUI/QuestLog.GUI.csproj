@@ -5,9 +5,7 @@
     <Nullable>enable</Nullable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <Version>0.0.1</Version>
     <AssemblyName>QuestLog</AssemblyName>
-    <AssemblyVersion>0.0.1</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

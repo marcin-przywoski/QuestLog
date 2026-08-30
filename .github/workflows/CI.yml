@@ -5,23 +5,37 @@ on:
     branches:
       - 'master'
       - 'development'
+      - 'release/**'
+      - 'hotfix/**'
       - 'feature/**'
       - 'fix/**'
     paths:
       - '**.cs'
       - '**.csproj'
       - '**.axaml'
+      - '**.slnx'
+      - 'Directory.Build.props'
+      - 'GitVersion.yml'
+      - '.config/dotnet-tools.json'
+      - '.github/workflows/CI.yml'
   pull_request:
     branches:
       - 'master'
       - 'development'
+      - 'release/**'
+      - 'hotfix/**'
       - 'feature/**'
       - 'fix/**'
     paths:
       - '**.cs'
       - '**.csproj'
       - '**.axaml'
-  workflow_dispatch: 
+      - '**.slnx'
+      - 'Directory.Build.props'
+      - 'GitVersion.yml'
+      - '.config/dotnet-tools.json'
+      - '.github/workflows/CI.yml'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -29,11 +43,29 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+      with:
+        # GitVersion derives the version from the commit history, so it needs
+        # every commit and tag rather than the default shallow clone.
+        fetch-depth: 0
 
     - name: Setup .NET 6.x
       uses: actions/setup-dotnet@v5
       with:
-        dotnet-version: "6"
+        # 6.x builds the application, 8.x runs the GitTools .NET tools.
+        dotnet-version: |
+          6.0.x
+          8.0.x
+
+    - name: Restore .NET tools
+      run: dotnet tool restore
+
+    - name: Determine version
+      # Publishes every calculated value as a GitVersion_* environment variable
+      # for the steps below, and fails the build on an invalid GitVersion.yml.
+      run: dotnet tool run dotnet-gitversion -output buildserver -nofetch
+
+    - name: Report version
+      run: echo "Building QuestLog ${GitVersion_FullSemVer} from ${GitVersion_BranchName}"
 
     - name: Run linter
       run: dotnet format --verify-no-changes QuestLog.slnx
@@ -42,4 +74,10 @@ jobs:
       run: dotnet restore QuestLog.slnx
 
     - name: Build .NET 6
-      run: dotnet build QuestLog.slnx --no-restore
+      run: >
+        dotnet build QuestLog.slnx --no-restore
+        -p:Version=${GitVersion_SemVer}
+        -p:AssemblyVersion=${GitVersion_AssemblySemVer}
+        -p:FileVersion=${GitVersion_AssemblySemFileVer}
+        -p:InformationalVersion=${GitVersion_InformationalVersion}
+        -p:IncludeSourceRevisionInInformationalVersion=false

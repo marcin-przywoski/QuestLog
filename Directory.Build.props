@@ -1,0 +1,20 @@
+<Project>
+
+  <!--
+    Version numbers are calculated by GitVersion (see GitVersion.yml) and passed
+    to MSBuild by the CI/CD workflows, for example:
+
+      dotnet build -p:Version=1.2.3 -p:AssemblyVersion=1.2.3.0 ...
+
+    The values below are only placeholders for local builds, where no version
+    has been supplied on the command line. Do not hand-edit a version into a
+    .csproj — it will be overwritten by the pipeline and drift from the tags.
+  -->
+  <PropertyGroup>
+    <Version Condition="'$(Version)' == ''">0.0.0</Version>
+    <AssemblyVersion Condition="'$(AssemblyVersion)' == ''">0.0.0.0</AssemblyVersion>
+    <FileVersion Condition="'$(FileVersion)' == ''">0.0.0.0</FileVersion>
+    <InformationalVersion Condition="'$(InformationalVersion)' == ''">0.0.0</InformationalVersion>
+  </PropertyGroup>
+
+</Project>
