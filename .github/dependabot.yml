@@ -11,7 +11,7 @@ updates:
       interval: "daily"
       time: "20:00"
     open-pull-requests-limit: 10
-    target-branch: "develop"
+    target-branch: "development"
     labels:
       - "dependencies"
     assignees:
@@ -23,6 +23,7 @@ updates:
     schedule:
       # Check for updates to GitHub Actions every week
       interval: "weekly"
+    target-branch: "development"
     labels:
       - "dependencies"
     assignees:
