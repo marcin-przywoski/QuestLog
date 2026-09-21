@@ -1,0 +1,30 @@
+workflow: GitHubFlow/v1
+
+commit-message-incrementing: MergeMessageOnly
+
+tag-prefix: "[vV]?"
+
+branches:
+  master:
+    mode: ContinuousDeployment
+
+  develop:
+    increment: Patch
+
+  feature:
+    increment: Minor
+
+  fix:
+    regex: ^fix[/-](?<BranchName>.+)
+    source-branches:
+      - develop
+    increment: Inherit
+    label: "fix-{BranchName}"
+
+  hotfix:
+    regex: ^hotfix(es)?[/-](?<BranchName>.+)
+    source-branches:
+      - master
+    increment: Patch
+    label: "hotfix-{BranchName}"
+
