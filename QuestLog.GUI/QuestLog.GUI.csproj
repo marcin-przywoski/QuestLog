@@ -28,6 +28,8 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
 
     <!-- Auto Updates -->
+    <PackageReference Include="SkiaSharp" Version="2.88.6" />
+    <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3" />
     <PackageReference Include="Velopack" Version="0.0.556" />
   </ItemGroup>
 </Project>
