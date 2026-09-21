@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - "*.*.*"
-
+    
 jobs:
   build-and-release:
     runs-on: windows-latest
@@ -26,8 +26,40 @@ jobs:
         with:
           dotnet-version: "6"
 
+      - name: Setup GitVersion
+        uses: gittools/actions/gitversion/setup@v4
+        with:
+          versionSpec: "6.x"
+          
+      - name: Determine GitVersion
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v4
+        with:
+          configFilePath: GitVersion.yml
+
+      - name: Print version
+        run: |
+          echo "GITVERSION_FULLSEMVER=${{ steps.gitversion.outputs.FullSemVer }}" >> $GITHUB_ENV
+          echo "GITVERSION_SEMVER=${{ steps.gitversion.outputs.SemVer }}" >> $GITHUB_ENV
+          echo "GITVERSION_ASSEMBLYSEMVER=${{ steps.gitversion.outputs.assemblySemVer }}" >> $GITHUB_ENV
+
+      - name: Verify tag version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          EXPECTED="${GITHUB_REF_NAME#v}"
+          ACTUAL="${GITVERSION_SEMVER}"
+
+          echo "Actual version: $ACTUAL"
+          echo "Expected version: $EXPECTED"
+
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "Tag version ($EXPECTED) does not match GitVersion ($ACTUAL)"
+            exit 1
+          fi
+
       - name: Build & publish (v6)
-        run: dotnet publish --configuration Release -o publish -r win-x64
+        run: dotnet publish --configuration Release -o publish -r win-x64 -p:Version=${{ steps.gitversion.outputs.semVer }}
 
       - name: Install Velopack CLI
         run: |
