@@ -5,6 +5,8 @@ commit-message-incrementing: MergeMessageOnly
 tag-prefix: "[vV]?"
 
 branches:
+  master:
+    mode: ContinuousDeployment
 
   develop:
     increment: Patch
