@@ -109,6 +109,7 @@ jobs:
         run: >
           gh api "repos/${{ github.repository }}/releases/generate-notes"
           -f tag_name="$env:RELEASE_NAME"
+          -f target_commitish="${{ github.sha }}"
           --jq .body
           | Out-File -FilePath release-notes.md -Encoding utf8
 
