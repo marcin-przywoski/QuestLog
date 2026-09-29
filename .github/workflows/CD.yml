@@ -33,6 +33,7 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 6
+          cache: true
 
       - name: Restore dotnet tools
         run: dotnet tool restore
