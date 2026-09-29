@@ -93,16 +93,19 @@ Local tool: `dotnet tool restore` installs `GitVersion.Tool` (see `dotnet-tools.
 On pushes/PRs to `master`, `development`, `feature/**`, `fix/**`:
 
 1. `dotnet format --verify-no-changes` lint gate
-2. GitVersion computes SemVer (tag pushes are verified against the computed version)
+2. GitVersion computes SemVer (tag pushes are verified against it in CD)
 3. `dotnet restore` + `dotnet build` (Release)
 
 ### CD (`.github/workflows/CD.yml`)
 
-On `*.*.*` tag pushes (Windows runner):
+On pushes to `master`/`development` and `*.*.*` tags (Windows runner):
 
 1. `dotnet publish -r win-x64`
 2. `vpk pack` builds a Velopack package (with delta updates against the previous release)
-3. GitHub release created via `gh release create`, Velopack assets uploaded with `vpk upload github`
+3. Release notes generated via `gh api releases/generate-notes`; `dotnet gitreleasemanager create` creates a **draft** release (`--pre` for prereleases)
+4. Velopack assets are uploaded with `vpk upload github --merge`, then `dotnet gitreleasemanager publish` publishes the release
+
+A `dev-sync.yml` workflow automatically opens a `master` → `development` sync PR after pushes to `master` (e.g. hotfixes).
 
 ## Contributing
 
