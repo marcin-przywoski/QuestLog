@@ -34,7 +34,7 @@ Toolbar command → IEmailService → embedded .applescript (__TOKEN__ substitut
 | `QuestLog.GUI/Resources/AppleScripts/` | Embedded `*.applescript` templates (auto-embedded by csproj glob) |
 | `QuestLog.GUI/Converters/` | `BoolToFontWeightConverter` (unread = bold) |
 | `scripts/` | `Invoke-CodeQlScan.ps1` — local CodeQL runner |
-| `.github/workflows/` | `CI.yml`, `CD.yml`, `codeql.yml`, `Backmerge.yml` |
+| `.github/workflows/` | `CI.yml`, `CD.yml`, `codeql.yml`, `dev-sync.yml` |
 
 ## Development Commands
 
