@@ -31,7 +31,7 @@ jobs:
             exit 0
           fi
 
-          existing=$(gh pr list --base development --head master --state open --json number --jq '.[0].number')
+          existing=$(gh pr list --base development --head master --state open --json number --jq 'if length == 0 then "" else .[0].number end')
 
           if [ -z "$existing" ]; then
             gh pr create --base development --head master \
