@@ -60,9 +60,9 @@ jobs:
           if ("${{ github.ref_type }}" -eq "tag") {
             $releaseName = "${{ github.ref_name }}"
           } elseif ("${{ steps.gitversion.outputs.PreReleaseLabel }}") {
-            $releaseName = "v${{ steps.gitversion.outputs.SemVer }}"
+            $releaseName = "${{ steps.gitversion.outputs.SemVer }}"
           } else {
-            $releaseName = "v${{ steps.gitversion.outputs.MajorMinorPatch }}"
+            $releaseName = "${{ steps.gitversion.outputs.MajorMinorPatch }}"
           }
           $isPre = if ("${{ steps.gitversion.outputs.PreReleaseLabel }}") { "true" } else { "false" }
           echo "RELEASE_NAME=$releaseName" >> $env:GITHUB_ENV
