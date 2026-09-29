@@ -8,6 +8,9 @@ on:
 jobs:
   build-and-release:
     runs-on: windows-latest
+    concurrency:
+      group: cd-release
+      cancel-in-progress: false
     permissions:
       contents: write
       pull-requests: write
