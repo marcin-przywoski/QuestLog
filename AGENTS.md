@@ -34,7 +34,7 @@ Toolbar command → IEmailService → embedded .applescript (__TOKEN__ substitut
 | `QuestLog.GUI/Resources/AppleScripts/` | Embedded `*.applescript` templates (auto-embedded by csproj glob) |
 | `QuestLog.GUI/Converters/` | `BoolToFontWeightConverter` (unread = bold) |
 | `scripts/` | `Invoke-CodeQlScan.ps1` — local CodeQL runner |
-| `.github/workflows/` | `CI.yml`, `CD.yml`, `codeql.yml` |
+| `.github/workflows/` | `CI.yml`, `CD.yml`, `codeql.yml`, `dev-sync.yml` |
 
 ## Development Commands
 
@@ -73,16 +73,17 @@ Enforced by `.editorconfig` + CI `dotnet format` gate (style rules are suggestio
 - `QuestLog.GUI/ViewLocator.cs` — VM→View name convention (`[RequiresUnreferencedCode]`)
 - `QuestLog.GUI/QuestLog.GUI.csproj` — net6.0 WinExe, `AssemblyName=QuestLog` (binary name ≠ project name)
 - `QuestLog.slnx` — authoritative project list (XML format; needs .NET 9+ SDK / VS 17.10+ to parse, though the project targets net6.0)
-- `GitVersion.yml` — GitHubFlow/v1; `master`=ContinuousDeployment, `feature`=Minor, `hotfix`=Patch
+- `GitVersion.yml` — GitHubFlow/v1; `main` (covers `master`/`main` via built-in regex)=ContinuousDeployment, `develop` (regex `^dev(elop)?(elopment)?$`, label `alpha`), `feature`=Minor, `hotfix`=Patch
 - `dotnet-tools.json` — at repo root (not `.config/`): `gitversion.tool` 6.8.2
 - `.editorconfig` — style authority
 
 ## Runtime/Tooling Preferences
 
 - **.NET 6 SDK** (CI pins `"6"`; no `global.json`). Note: `.slnx` parsing needs newer SDK/IDE.
-- NuGet via `dotnet restore`; local tools via `dotnet tool restore` (GitVersion only).
+- NuGet via `dotnet restore`; local tools via `dotnet tool restore` (GitVersion, GitReleaseManager).
 - Dependencies: Avalonia 11.0.0 (+Desktop, Fluent theme, Inter font, Diagnostics debug-only), CommunityToolkit.Mvvm 8.2.1, Velopack 0.0.556.
-- Releases: tag `*.*.*` → CD on `windows-latest` → `dotnet publish -r win-x64` → `vpk pack` (Velopack, deltas) → `gh release create` → `vpk upload`.
+- Releases: push to `master`/`development` or tag `*.*.*` → CD on `windows-latest` → `dotnet publish -r win-x64` → `vpk pack` (Velopack, deltas) → GitHub `generate-notes` → `dotnet-gitreleasemanager create` (draft; `--pre` on prereleases) → `vpk upload` → `dotnet-gitreleasemanager publish`. Branch pushes derive the release name from GitVersion (`{MajorMinorPatch}` stable on master, `{SemVer}` prerelease elsewhere — bare SemVer, no `v` prefix, matching existing tags); each release creates its tag, which feeds the next version computation.
+- Sync: `dev-sync.yml` opens/auto-merges a `master`→`development` PR after pushes to `master` (merge commit, not squash). It uses `GITHUB_TOKEN` — merges by that token do NOT trigger downstream workflows, so the synced push to `development` won't kick off CI/CD by itself.
 
 ## Testing & QA
 
@@ -94,6 +95,6 @@ Enforced by `.editorconfig` + CI `dotnet format` gate (style rules are suggestio
 
 ## Known Quirks
 
-- Branch-name mismatch: CI triggers on `development`, but `dependabot.yml` targets `develop` (GitVersion's regex matches both).
+- Dependabot targets `development`; GitVersion's `develop` regex matches both `develop` and `development`.
 - CD ships a `win-x64` Velopack package for a macOS-only app.
 - `.vscode/settings.json` hardcodes an absolute Windows path in `axaml.selectedSolution`.

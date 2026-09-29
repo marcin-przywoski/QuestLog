@@ -1,0 +1,29 @@
+default-branch: master
+
+issue-labels-include:
+  - feature
+  - enhancement
+  - bugfix
+  - dependencies
+  - breaking
+
+issue-labels-exclude:
+  - ignore-for-release
+  - release
+
+issue-labels-alias:
+  - name: feature
+    header: New Feature
+    plural: New Features
+  - name: enhancement
+    header: Enhancement
+    plural: Enhancements
+  - name: bugfix
+    header: Fix
+    plural: Fixes
+  - name: dependencies
+    header: Dependency
+    plural: Dependencies
+  - name: breaking
+    header: Breaking Change
+    plural: Breaking Changes
