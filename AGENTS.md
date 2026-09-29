@@ -73,7 +73,7 @@ Enforced by `.editorconfig` + CI `dotnet format` gate (style rules are suggestio
 - `QuestLog.GUI/ViewLocator.cs` — VM→View name convention (`[RequiresUnreferencedCode]`)
 - `QuestLog.GUI/QuestLog.GUI.csproj` — net6.0 WinExe, `AssemblyName=QuestLog` (binary name ≠ project name)
 - `QuestLog.slnx` — authoritative project list (XML format; needs .NET 9+ SDK / VS 17.10+ to parse, though the project targets net6.0)
-- `GitVersion.yml` — GitHubFlow/v1; `master`=ContinuousDeployment, `feature`=Minor, `hotfix`=Patch
+- `GitVersion.yml` — GitHubFlow/v1; `main` (covers `master`/`main` via built-in regex)=ContinuousDeployment, `develop` (regex `^dev(elop)?(elopment)?$`, label `alpha`), `feature`=Minor, `hotfix`=Patch
 - `dotnet-tools.json` — at repo root (not `.config/`): `gitversion.tool` 6.8.2
 - `.editorconfig` — style authority
 
@@ -94,6 +94,6 @@ Enforced by `.editorconfig` + CI `dotnet format` gate (style rules are suggestio
 
 ## Known Quirks
 
-- Branch-name mismatch: CI triggers on `development`, but `dependabot.yml` targets `develop` (GitVersion's regex matches both).
+- Dependabot targets `development`; GitVersion's `develop` regex matches both `develop` and `development`.
 - CD ships a `win-x64` Velopack package for a macOS-only app.
 - `.vscode/settings.json` hardcodes an absolute Windows path in `axaml.selectedSolution`.
