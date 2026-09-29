@@ -51,6 +51,22 @@ jobs:
           echo "GITVERSION_SEMVER=${{ steps.gitversion.outputs.SemVer }}" >> $GITHUB_ENV
           echo "GITVERSION_ASSEMBLYSEMVER=${{ steps.gitversion.outputs.assemblySemVer }}" >> $GITHUB_ENV
 
+      - name: Determine release name
+        shell: pwsh
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $releaseName = "${{ github.ref_name }}"
+          } elseif ("${{ steps.gitversion.outputs.PreReleaseLabel }}") {
+            $releaseName = "v${{ steps.gitversion.outputs.SemVer }}"
+          } else {
+            $releaseName = "v${{ steps.gitversion.outputs.MajorMinorPatch }}"
+          }
+          $isPre = if ("${{ steps.gitversion.outputs.PreReleaseLabel }}") { "true" } else { "false" }
+          echo "RELEASE_NAME=$releaseName" >> $env:GITHUB_ENV
+          echo "RELEASE_VERSION=$($releaseName -replace '^[vV]', '')" >> $env:GITHUB_ENV
+          echo "IS_PRERELEASE=$isPre" >> $env:GITHUB_ENV
+          echo "Release name: $releaseName (prerelease: $isPre)"
+
       - name: Verify tag version
         if: github.ref_type == 'tag'
         shell: bash
