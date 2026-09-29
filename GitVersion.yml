@@ -7,9 +7,15 @@ tag-prefix: "[vV]?"
 branches:
   master:
     mode: ContinuousDeployment
+    is-main-branch: true
+    regex: master
 
   develop:
+    regex: ^dev(elop)?(elopment)?$
+    source-branches:
+      - master
     increment: Patch
+    label: alpha
 
   feature:
     increment: Minor
@@ -27,4 +33,3 @@ branches:
       - master
     increment: Patch
     label: "hotfix-{BranchName}"
-
