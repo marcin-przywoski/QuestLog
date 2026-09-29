@@ -17,6 +17,13 @@ branches:
     increment: Patch
     label: alpha
 
+  enhancement:
+    regex: ^enhancement[/-](?<BranchName>.+)
+    source-branches:
+      - develop
+    increment: Minor
+    label: "enhancement-{BranchName}"
+
   feature:
     increment: Minor
 
