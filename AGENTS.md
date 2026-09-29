@@ -83,6 +83,7 @@ Enforced by `.editorconfig` + CI `dotnet format` gate (style rules are suggestio
 - NuGet via `dotnet restore`; local tools via `dotnet tool restore` (GitVersion, GitReleaseManager).
 - Dependencies: Avalonia 11.0.0 (+Desktop, Fluent theme, Inter font, Diagnostics debug-only), CommunityToolkit.Mvvm 8.2.1, Velopack 0.0.556.
 - Releases: push to `master`/`development` or tag `*.*.*` → CD on `windows-latest` → `dotnet publish -r win-x64` → `vpk pack` (Velopack, deltas) → GitHub `generate-notes` → `dotnet-gitreleasemanager create` (draft; `--pre` on prereleases) → `vpk upload` → `dotnet-gitreleasemanager publish`. Branch pushes derive the release name from GitVersion (`{MajorMinorPatch}` stable on master, `{SemVer}` prerelease elsewhere — bare SemVer, no `v` prefix, matching existing tags); each release creates its tag, which feeds the next version computation.
+- Sync: `dev-sync.yml` opens/auto-merges a `master`→`development` PR after pushes to `master` (merge commit, not squash). It uses `GITHUB_TOKEN` — merges by that token do NOT trigger downstream workflows, so the synced push to `development` won't kick off CI/CD by itself.
 
 ## Testing & QA
 
