@@ -74,7 +74,7 @@ try {
     }
 
     if (-not (Test-Path -LiteralPath $databasePath)) {
-        $buildCommand = "dotnet build `"$solutionPath`" --configuration $Configuration"
+        $buildCommand = "dotnet build `"$solutionPath`" --configuration $Configuration --no-incremental"
 
         Write-Host "Creating a C# CodeQL database..."
         Invoke-CodeQlCommand -Arguments @(
