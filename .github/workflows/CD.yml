@@ -109,6 +109,22 @@ jobs:
           --jq .body
           | Out-File -FilePath release-notes.md -Encoding utf8
 
+      - name: Create draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $grmArgs = @(
+            "create",
+            "--token", "${{ secrets.GITHUB_TOKEN }}",
+            "--owner", "${{ github.repository_owner }}",
+            "--repository", "${{ github.event.repository.name }}",
+            "--name", "$env:RELEASE_NAME",
+            "--inputFilePath", "release-notes.md",
+            "--targetcommitish", "${{ github.sha }}"
+          )
+          if ($env:IS_PRERELEASE -eq "true") { $grmArgs += "--pre" }
+          dotnet gitreleasemanager @grmArgs
+
       - name: Upload Velopack package to release
         run: >
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --tag $env:RELEASE_NAME --token ${{ secrets.GITHUB_TOKEN }} --merge
