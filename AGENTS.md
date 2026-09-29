@@ -80,9 +80,9 @@ Enforced by `.editorconfig` + CI `dotnet format` gate (style rules are suggestio
 ## Runtime/Tooling Preferences
 
 - **.NET 6 SDK** (CI pins `"6"`; no `global.json`). Note: `.slnx` parsing needs newer SDK/IDE.
-- NuGet via `dotnet restore`; local tools via `dotnet tool restore` (GitVersion only).
+- NuGet via `dotnet restore`; local tools via `dotnet tool restore` (GitVersion, GitReleaseManager).
 - Dependencies: Avalonia 11.0.0 (+Desktop, Fluent theme, Inter font, Diagnostics debug-only), CommunityToolkit.Mvvm 8.2.1, Velopack 0.0.556.
-- Releases: tag `*.*.*` → CD on `windows-latest` → `dotnet publish -r win-x64` → `vpk pack` (Velopack, deltas) → `gh release create` → `vpk upload`.
+- Releases: push to `master`/`development` or tag `*.*.*` → CD on `windows-latest` → `dotnet publish -r win-x64` → `vpk pack` (Velopack, deltas) → GitHub `generate-notes` → `dotnet-gitreleasemanager create` (draft; `--pre` on prereleases) → `vpk upload` → `dotnet-gitreleasemanager publish`. Branch pushes derive the release name from GitVersion (`v{MajorMinorPatch}` stable on master, `v{SemVer}` prerelease elsewhere); each release creates its tag, which feeds the next version computation.
 
 ## Testing & QA
 
