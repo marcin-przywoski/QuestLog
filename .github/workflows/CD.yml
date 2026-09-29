@@ -111,7 +111,7 @@ jobs:
 
       - name: Upload Velopack package to release
         run: >
-          vpk upload github --repoUrl https://github.com/${{ github.repository }} --tag ${{ github.ref_name }} --publish --token ${{ secrets.GITHUB_TOKEN }} --merge
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --tag $env:RELEASE_NAME --token ${{ secrets.GITHUB_TOKEN }} --merge
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
