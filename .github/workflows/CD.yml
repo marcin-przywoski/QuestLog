@@ -82,8 +82,8 @@ jobs:
             exit 1
           fi
 
-      - name: Build & publish (v6)
-        run: dotnet publish --configuration Release -o publish -r win-x64 -p:Version=${{ steps.gitversion.outputs.semVer }}
+      - name: Build & publish
+        run: dotnet publish --configuration Release -o publish -r win-x64 -p:Version=$env:RELEASE_VERSION
 
       - name: Install Velopack CLI
         run: |
@@ -98,7 +98,7 @@ jobs:
 
       - name: Create Velopack package with deltas
         run: |
-          vpk pack -u QuestLog -v ${{ github.ref_name }} -p publish
+          vpk pack -u QuestLog -v $env:RELEASE_VERSION -p publish
 
       - name: Create Github release
         env:
