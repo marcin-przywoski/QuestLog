@@ -65,10 +65,16 @@ jobs:
             $releaseName = "${{ steps.gitversion.outputs.MajorMinorPatch }}"
           }
           $isPre = if ("${{ steps.gitversion.outputs.PreReleaseLabel }}") { "true" } else { "false" }
+
+          # Velopack channels: stable releases feed the default 'win' channel,
+          # prereleases feed 'win-{label}' (e.g. 'win-alpha' for development builds).
+          
+          $channel = if ("${{ steps.gitversion.outputs.PreReleaseLabel }}") { "win-${{ steps.gitversion.outputs.PreReleaseLabel }}" } else { "win" }
           echo "RELEASE_NAME=$releaseName" >> $env:GITHUB_ENV
           echo "RELEASE_VERSION=$($releaseName -replace '^[vV]', '')" >> $env:GITHUB_ENV
           echo "IS_PRERELEASE=$isPre" >> $env:GITHUB_ENV
-          echo "Release name: $releaseName (prerelease: $isPre)"
+          echo "VELOPACK_CHANNEL=$channel" >> $env:GITHUB_ENV
+          echo "Release name: $releaseName (prerelease: $isPre, channel: $channel)"
 
       - name: Verify tag version
         if: github.ref_type == 'tag'
@@ -94,14 +100,14 @@ jobs:
 
       - name: Download previous release for delta generation
         run: |
-          vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
+          vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} --channel $env:VELOPACK_CHANNEL
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
       - name: Create Velopack package with deltas
         run: |
-          vpk pack -u QuestLog -v $env:RELEASE_VERSION -p publish
+          vpk pack -u QuestLog -v $env:RELEASE_VERSION -p publish -r win-x64 --channel $env:VELOPACK_CHANNEL
 
       - name: Generate release notes
         env:
@@ -131,7 +137,7 @@ jobs:
 
       - name: Upload Velopack package to release
         run: >
-          vpk upload github --repoUrl https://github.com/${{ github.repository }} --tag $env:RELEASE_NAME --token ${{ secrets.GITHUB_TOKEN }} --merge
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --tag $env:RELEASE_NAME --token ${{ secrets.GITHUB_TOKEN }} --merge --channel $env:VELOPACK_CHANNEL
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
