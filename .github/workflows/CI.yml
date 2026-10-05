@@ -36,6 +36,8 @@ jobs:
       uses: actions/setup-dotnet@v5
       with:
         dotnet-version: "6"
+        cache: true 
+        cache-dependency-path: QuestLog.GUI/packages.lock.json
 
     - name: Run linter
       run: dotnet format --verify-no-changes QuestLog.slnx
@@ -59,7 +61,7 @@ jobs:
 
 
     - name: Restore dependencies
-      run: dotnet restore QuestLog.slnx
+      run: dotnet restore QuestLog.slnx --locked-mode
 
     - name: Build .NET 6
       run: dotnet build QuestLog.slnx --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.semVer }}
