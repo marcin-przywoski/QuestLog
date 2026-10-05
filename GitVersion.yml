@@ -15,7 +15,7 @@ branches:
     source-branches:
       - master
     increment: Patch
-    label: alpha
+    label: dev
 
   enhancement:
     regex: ^enhancement[/-](?<BranchName>.+)
