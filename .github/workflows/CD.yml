@@ -5,6 +5,10 @@ on:
     branches:
       - master
       - development
+    paths: 
+      - '**.cs'
+      - '**.csproj'
+      - '**.axaml'
     tags:
       - "*.*.*"
     
