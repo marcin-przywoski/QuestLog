@@ -101,8 +101,18 @@ jobs:
           dotnet tool install -g vpk
 
       - name: Download previous release for delta generation
+        shell: pwsh
         run: |
-          vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }} --channel $env:VELOPACK_CHANNEL
+          # --pre is required on prerelease channels: without it the download
+          # source filters to stable releases only and finds no matching feed.
+          $dlArgs = @(
+            "download", "github",
+            "--repoUrl", "https://github.com/${{ github.repository }}",
+            "--token", "${{ secrets.GITHUB_TOKEN }}",
+            "--channel", "$env:VELOPACK_CHANNEL"
+          )
+          if ($env:IS_PRERELEASE -eq "true") { $dlArgs += "--pre" }
+          vpk @dlArgs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
