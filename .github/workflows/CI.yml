@@ -6,7 +6,9 @@ on:
       - 'master'
       - 'development'
       - 'feature/**'
+      - 'enhancement/**'
       - 'fix/**'
+      - 'hotfix/**'
     paths:
       - '**.cs'
       - '**.csproj'
@@ -16,7 +18,9 @@ on:
       - 'master'
       - 'development'
       - 'feature/**'
+      - 'enhancement/**'
       - 'fix/**'
+      - 'hotfix/**'
     paths:
       - '**.cs'
       - '**.csproj'
