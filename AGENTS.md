@@ -48,7 +48,7 @@ dotnet tool restore && dotnet gitversion              # SemVer via GitVersion 6.
 pwsh scripts/Invoke-CodeQlScan.ps1                    # local CodeQL → artifacts/codeql/*.sarif
 ```
 
-**SDK requirement:** `QuestLog.slnx` is the XML solution format — `dotnet`/MSBuild **≥9.0.200** (or VS 17.10+) is required to parse it, even though the project targets net6.0. On SDK ≤8 every command fails with MSB4068; `dotnet format` crashes. There is no `global.json` — local SDK resolves to whatever is installed.
+**SDK requirement:** `QuestLog.slnx` is the XML solution format — `dotnet`/MSBuild **≥9.0.200** (or VS 17.10+) is required to parse it, even though the project targets net6.0. If the muxer resolves an SDK ≤8, every command fails with MSB4068 and `dotnet format` crashes. There is no `global.json` — the muxer resolves to the **newest installed** SDK, so any machine/runner with ≥9 installed works regardless of other pins.
 
 Always pass `QuestLog.slnx` or `--project QuestLog.GUI` explicitly. `BuildInfo.targets` at repo root is a **dead leftover** (untracked, unreferenced, would generate `namespace SharpGallery`) — ignore it.
 
@@ -105,7 +105,7 @@ CI/CodeQL triggers are **path-filtered to `**.cs`, `**.csproj`, `**.axaml`** —
 
 ## Known Quirks
 
-- **CI/CD SDK pin is broken:** `CI.yml`/`CD.yml` pin `dotnet-version: "6"`, but SDK 6 cannot parse `.slnx` (MSB4068 / format crash, verified). Pipelines as written cannot succeed unless the pin is raised to ≥9.0.200.
+- **CI/CD SDK pin is misleading, not broken:** `CI.yml`/`CD.yml` pin `dotnet-version: "6"`, which cannot parse `.slnx` on its own — but `actions/setup-dotnet` only *adds* SDK 6 alongside the image's preinstalled SDKs, and with no `global.json` the dotnet muxer resolves to the newest SDK present (≥9 on hosted runners). Pipelines build fine; the effective SDK just floats with the runner image. If reproducibility matters, pin `"9.0.x"` or add `global.json`.
 - `GitVersion.yml`: the built-in `main` rule (`^master$|^main$`, Patch increment) **shadows the user `master:` block** (`mode: ContinuousDeployment`, `increment: None`) — the block is dead config.
 - `CD.yml:76` comment says `win-alpha` channel — actual is `win-dev` (comment is stale, code is right).
 - `Email` model: only `IsRead` raises change notification; other properties are plain auto-props.
