@@ -12,6 +12,7 @@ namespace QuestLog.GUI.ViewModels
     public partial class MainWindowViewModel : ViewModelBase
     {
         private readonly IEmailService _emailService;
+        private readonly IUpdateService _updateService;
 
         [ObservableProperty]
         private ObservableCollection<Email> _emails = new();
@@ -28,14 +29,25 @@ namespace QuestLog.GUI.ViewModels
         [ObservableProperty]
         private bool _showUnreadOnly;
 
+        [ObservableProperty]
+        private bool _isUpdateAvailable;
+
+        [ObservableProperty]
+        private bool _isCheckingForUpdates;
+
+        [ObservableProperty]
+        private string? _availableUpdateVersion;
+
         public MainWindowViewModel()
         {
             _emailService = new AppleScriptOutlookService();
+            _updateService = new VelopackUpdateService();
         }
 
-        public MainWindowViewModel(IEmailService emailService)
+        public MainWindowViewModel(IEmailService emailService, IUpdateService updateService)
         {
             _emailService = emailService;
+            _updateService = updateService;
         }
 
         [RelayCommand]
@@ -100,6 +112,55 @@ namespace QuestLog.GUI.ViewModels
                 }
 
                 StatusMessage = "Email marked as read";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        private async Task CheckForUpdatesAsync()
+        {
+            try
+            {
+                IsCheckingForUpdates = true;
+                StatusMessage = "Checking for updates...";
+
+                var update = await _updateService.CheckForUpdatesAsync();
+                if (update == null)
+                {
+                    IsUpdateAvailable = false;
+                    AvailableUpdateVersion = null;
+                    StatusMessage = "App is up to date";
+                    return;
+                }
+
+                var version = update.TargetFullRelease?.Version?.ToString() ?? "unknown";
+                StatusMessage = $"Update {version} available - downloading...";
+                await _updateService.DownloadUpdateAsync(update);
+
+                IsUpdateAvailable = true;
+                AvailableUpdateVersion = version;
+                StatusMessage = $"Update {version} ready - restart to update";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                IsCheckingForUpdates = false;
+            }
+        }
+
+        [RelayCommand]
+        private async Task ApplyUpdateAsync()
+        {
+            try
+            {
+                StatusMessage = "Applying update...";
+                await _updateService.ApplyUpdateAndRestartAsync();
             }
             catch (Exception ex)
             {

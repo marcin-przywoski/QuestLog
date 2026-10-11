@@ -1,9 +1,11 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using QuestLog.GUI.Services;
 using QuestLog.GUI.ViewModels;
 using QuestLog.GUI.Views;
 
@@ -23,10 +25,17 @@ namespace QuestLog.GUI
                 // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
                 // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
                 DisableAvaloniaDataAnnotationValidation();
+                var viewModel = new MainWindowViewModel(new AppleScriptOutlookService(), new VelopackUpdateService());
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(),
+                    DataContext = viewModel,
                 };
+
+                // Auto-check for updates on startup (not at design time).
+                if (!Design.IsDesignMode)
+                {
+                    _ = viewModel.CheckForUpdatesCommand.ExecuteAsync(null);
+                }
             }
 
             base.OnFrameworkInitializationCompleted();
