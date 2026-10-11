@@ -75,7 +75,7 @@ Enforced by `.editorconfig` + CI `dotnet format` gate — **whitespace/formattin
 **Update conventions** (`VelopackUpdateService.cs`):
 
 - Feed is `GithubSource(repoUrl, accessToken: null, prerelease: true)` — matches CD's `vpk upload github --channel win|win-dev`; the install's packed channel filters stable vs dev. `DefaultRepoUrl` is the repo URL, not an atom feed.
-- `CheckForUpdatesAsync` throws `InvalidOperationException` when `!UpdateManager.IsInstalled` (dev runs from source can't update) — throwing (not returning `null`) keeps "no update available" distinguishable from "can't update" for the status bar.
+- `CheckForUpdatesAsync` throws `InvalidOperationException` when `!UpdateManager.IsInstalled` or `!UpdateManager.IsPortable` (dev runs from source can't update) — throwing (not returning `null`) keeps "no update available" distinguishable from "can't update" for the status bar.
 - `IUpdateService` keeps Velopack types (`UpdateInfo`) in its signatures because `VelopackAsset` can't be reconstructed from a plain model (`UpdateInfo` ctor needs assets; `UpdateManager.Locator` is private) — hence the service caches the target `VelopackAsset` **only after a successful download** and exposes `PendingUpdateNotes`; the VM maps it into the plain `AvailableUpdate` model. A re-check hides the banner but the VM restores it if the re-check fails, and the cached asset is never cleared, so a downloaded update stays applicable. `DownloadUpdatesAsync` uses delta packages (no `ignoreDeltas`).
 - `ApplyUpdateAndRestartAsync` throws `InvalidOperationException` if nothing was downloaded; success restarts the app (the method's `Task` never meaningfully completes).
 
