@@ -50,7 +50,7 @@
                              VerticalAlignment="Center"
                              Margin="20,0,0,0">
                     <ProgressBar.IsVisible>
-                        <MultiBinding Converter="{StaticResource BooleanOrConverter}">
+                        <MultiBinding Converter="{x:Static converters:BoolConverters.Or}">
                             <Binding Path="IsLoading"/>
                             <Binding Path="IsCheckingForUpdates"/>
                         </MultiBinding>
