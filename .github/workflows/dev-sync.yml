@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 jobs:
   backmerge:
@@ -41,6 +42,9 @@ jobs:
           fi
 
           echo "Backmerge PR: #$existing"
+          # Sync PRs should never appear in generated release notes.
+          gh pr edit "$existing" --add-label ignore-for-release || \
+            echo "::warning::Could not add ignore-for-release label to #$existing"
           gh pr merge "$existing" --auto --merge || \
             gh pr merge "$existing" --merge || \
             echo "::warning::Could not merge #$existing (conflicts or repo auto-merge disabled) — resolve manually"
