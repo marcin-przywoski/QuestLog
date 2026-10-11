@@ -27,6 +27,8 @@ namespace QuestLog.GUI.Services
             _updateManager = new UpdateManager(new GithubSource(repoUrl, accessToken: null, prerelease: true));
         }
 
+        public string PendingUpdateNotes => _pendingUpdate?.NotesMarkdown ?? string.Empty;
+
         public async Task<UpdateInfo?> CheckForUpdatesAsync()
         {
             // Updates only work for Velopack-installed builds (not dev runs from source).

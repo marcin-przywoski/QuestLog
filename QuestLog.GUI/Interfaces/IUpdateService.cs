@@ -5,6 +5,9 @@ namespace QuestLog.GUI.Interfaces
 {
     public interface IUpdateService
     {
+        /// <summary>Release notes (markdown) of the pending update; empty when none.</summary>
+        string PendingUpdateNotes { get; }
+
         /// <summary>Checks the update feed; returns null when the app is up to date.</summary>
         Task<UpdateInfo?> CheckForUpdatesAsync();
 

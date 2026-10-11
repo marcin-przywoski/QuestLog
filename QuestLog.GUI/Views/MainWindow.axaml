@@ -13,7 +13,8 @@
         Width="1000" Height="600">
 
     <Design.DataContext>
-        <vm:MainWindowViewModel ShowUnreadOnly="True" StatusMessage="Loaded 3 email(s)">
+        <vm:MainWindowViewModel ShowUnreadOnly="True" StatusMessage="Loaded 3 email(s)"
+                                AvailableUpdate="{x:Null}">
             <vm:MainWindowViewModel.Emails>
                 <models:Email Id="email-001"
                               Subject="Project kickoff and next steps"
@@ -76,8 +77,8 @@
                         Padding="15,8"/>
                 <Button Content="Restart to update" 
                       Command="{Binding ApplyUpdateCommand}"
-                      IsVisible="{Binding IsUpdateAvailable}"
-                      ToolTip.Tip="{Binding AvailableUpdateVersion, StringFormat='Downloaded update: {0}'}"
+                      IsVisible="{Binding AvailableUpdate, Converter={x:Static converters:ObjectConverters.IsNotNull}}"
+                      ToolTip.Tip="{Binding AvailableUpdate.Version, StringFormat='Downloaded update: {0}'}"
                       Padding="15,8"/>
                 <ProgressBar IsIndeterminate="True" 
                              IsVisible="{Binding IsLoading}"
@@ -96,7 +97,8 @@
         <Grid Grid.Row="1" ColumnDefinitions="350,*">
             
             <!-- Email List -->
-            <Border Grid.Column="0" BorderBrush="#e0e0e0" BorderThickness="0,0,1,0">
+            <Border Grid.Column="0" BorderBrush="#e0e0e0" BorderThickness="0,0,1,0"
+                    IsVisible="{Binding AvailableUpdate, Converter={x:Static converters:ObjectConverters.IsNull}}">
                 <ListBox ItemsSource="{Binding Emails}" 
                          SelectedItem="{Binding SelectedEmail}"
                          Background="White">
@@ -130,7 +132,8 @@
             </Border>
 
             <!-- Email Detail -->
-            <Border Grid.Column="1" Background="White" Padding="20">
+            <Border Grid.Column="1" Background="White" Padding="20"
+                    IsVisible="{Binding AvailableUpdate, Converter={x:Static converters:ObjectConverters.IsNull}}">
                 <ScrollViewer IsVisible="{Binding SelectedEmail, Converter={x:Static converters:ObjectConverters.IsNotNull}}">
                     <StackPanel Spacing="15" DataContext="{Binding SelectedEmail}">
                         <TextBlock Text="{Binding Subject}" 
@@ -148,6 +151,24 @@
                         </StackPanel>
                         <Separator Margin="0,10"/>
                         <TextBlock Text="{Binding Body}" 
+                                   TextWrapping="Wrap"
+                                   LineHeight="22"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Update Detail (release notes) -->
+            <Border Grid.Column="1" Background="White" Padding="20"
+                    IsVisible="{Binding AvailableUpdate, Converter={x:Static converters:ObjectConverters.IsNotNull}}">
+                <ScrollViewer>
+                    <StackPanel Spacing="15" DataContext="{Binding AvailableUpdate}">
+                        <TextBlock Text="{Binding Version, StringFormat='Update {0}'}"
+                                   FontSize="20"
+                                   FontWeight="SemiBold"
+                                   TextWrapping="Wrap"/>
+                        <Separator/>
+                        <TextBlock Text="Release notes" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding NotesMarkdown}"
                                    TextWrapping="Wrap"
                                    LineHeight="22"/>
                     </StackPanel>

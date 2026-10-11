@@ -30,13 +30,10 @@ namespace QuestLog.GUI.ViewModels
         private bool _showUnreadOnly;
 
         [ObservableProperty]
-        private bool _isUpdateAvailable;
+        private AvailableUpdate? _availableUpdate;
 
         [ObservableProperty]
         private bool _isCheckingForUpdates;
-
-        [ObservableProperty]
-        private string? _availableUpdateVersion;
 
         public MainWindowViewModel()
         {
@@ -130,8 +127,7 @@ namespace QuestLog.GUI.ViewModels
                 var update = await _updateService.CheckForUpdatesAsync();
                 if (update == null)
                 {
-                    IsUpdateAvailable = false;
-                    AvailableUpdateVersion = null;
+                    AvailableUpdate = null;
                     StatusMessage = "App is up to date";
                     return;
                 }
@@ -140,8 +136,11 @@ namespace QuestLog.GUI.ViewModels
                 StatusMessage = $"Update {version} available - downloading...";
                 await _updateService.DownloadUpdateAsync(update);
 
-                IsUpdateAvailable = true;
-                AvailableUpdateVersion = version;
+                AvailableUpdate = new AvailableUpdate
+                {
+                    Version = version,
+                    NotesMarkdown = _updateService.PendingUpdateNotes,
+                };
                 StatusMessage = $"Update {version} ready - restart to update";
             }
             catch (Exception ex)
