@@ -81,16 +81,17 @@ QuestLog.GUI/
 
 Versioning is driven by [GitVersion](https://gitversion.net/) (`GitVersion.yml`, GitHub Flow):
 
-- `master` — continuous deployment
-- `feature/*` — minor increments
-- `fix/*` — inherits from `develop`
+- `master` — stable releases
+- `development` — patch increments, with a `dev` prerelease label
+- `feature/*` and `enhancement/*` — minor increments
+- `fix/*` — inherits its increment from `develop`
 - `hotfix/*` — patch increments from `master`
 
-Local tool: `dotnet tool restore` installs `GitVersion.Tool` (see `dotnet-tools.json`).
+Local tools: `dotnet tool restore` installs GitVersion.Tool and GitReleaseManager.Tool (see `dotnet-tools.json`).
 
 ### CI (`.github/workflows/CI.yml`)
 
-On pushes/PRs to `master`, `development`, `feature/**`, `fix/**`:
+On pushes/PRs to `master`, `development`, `feature/**`, `enhancement/**`, `fix/**`, `hotfix/**`:
 
 1. `dotnet format --verify-no-changes` lint gate
 2. GitVersion computes SemVer (tag pushes are verified against it in CD)
