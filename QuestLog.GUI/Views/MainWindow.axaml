@@ -75,9 +75,10 @@
                         IsEnabled="{Binding !IsCheckingForUpdates}"
                         Padding="15,8"/>
                 <Button Content="Restart to update" 
-                        Command="{Binding ApplyUpdateCommand}"
-                        IsVisible="{Binding IsUpdateAvailable}"
-                        Padding="15,8"/>
+                      Command="{Binding ApplyUpdateCommand}"
+                      IsVisible="{Binding IsUpdateAvailable}"
+                      ToolTip.Tip="{Binding AvailableUpdateVersion, StringFormat='Downloaded update: {0}'}"
+                      Padding="15,8"/>
                 <ProgressBar IsIndeterminate="True" 
                              IsVisible="{Binding IsLoading}"
                              Width="100"
