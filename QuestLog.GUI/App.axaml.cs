@@ -1,5 +1,4 @@
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
@@ -30,12 +29,6 @@ namespace QuestLog.GUI
                 {
                     DataContext = viewModel,
                 };
-
-                // Auto-check for updates on startup (not at design time).
-                if (!Design.IsDesignMode)
-                {
-                    _ = viewModel.CheckForUpdatesCommand.ExecuteAsync(null);
-                }
             }
 
             base.OnFrameworkInitializationCompleted();

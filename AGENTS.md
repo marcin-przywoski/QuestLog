@@ -15,7 +15,7 @@ Toolbar command → IEmailService → embedded .applescript (__TOKEN__ substitut
   → /usr/bin/osascript -e <script> → stdout (<<EMAIL>> records, "||" fields)
   → ParseEmails → ObservableCollection<Email> → compiled bindings
 
-Startup/manual check → IUpdateService (VelopackUpdateService) → Velopack UpdateManager(GithubSource)
+Manual check (toolbar button) → IUpdateService (VelopackUpdateService) → Velopack UpdateManager(GithubSource)
   → UpdateInfo → download → AvailableUpdate (Version + NotesMarkdown)
   → update banner above the emails (never replaces them); restart applies + relaunches
 ```
@@ -23,7 +23,7 @@ Startup/manual check → IUpdateService (VelopackUpdateService) → Velopack Upd
 - **MVVM via CommunityToolkit.Mvvm 8.2.1 source generators** — NOT ReactiveUI. `[ObservableProperty]` on `_camelCase` fields → `PascalCase` properties; `[RelayCommand]` on `async Task XxxAsync()` → `XxxCommand`; change hooks via `partial void OnXxxChanged(...)`. VMs must be `partial` and inherit `ViewModelBase : ObservableObject`.
 - **ViewLocator convention** (`ViewLocator.cs`): `QuestLog.GUI.ViewModels.FooViewModel` ↔ `QuestLog.GUI.Views.FooView` — name-symmetric or the view won't resolve (fallback renders `TextBlock "Not Found: …"`). Annotated `[RequiresUnreferencedCode]` (trimming trap).
 - **No DI container.** `App.axaml.cs` news up `MainWindowViewModel` via the `(IEmailService, IUpdateService)` ctor overload (`AppleScriptOutlookService` + `VelopackUpdateService`); the VM's parameterless ctor — used only by the XAML loader/designer — wires the `DesignTime*` fakes instead. Follow ctor-overload injection; don't half-wire a container.
-- **Design mode:** the previewer does NOT reliably set `Design.IsDesignMode`, so design-time safety comes from the fakes: `DesignTimeEmailService`/`DesignTimeUpdateService` return `DesignData` samples and never run osascript or touch Velopack. `MainWindow.axaml` `Design.DataContext` binds `SelectedEmail`/`AvailableUpdate` via `x:Static` to `DesignData`; `App.axaml.cs` still guards the startup auto update-check with `Design.IsDesignMode`.
+- **Design mode:** the previewer does NOT reliably set `Design.IsDesignMode`, so design-time safety comes from the fakes: `DesignTimeEmailService`/`DesignTimeUpdateService` return `DesignData` samples and never run osascript or touch Velopack. `MainWindow.axaml` `Design.DataContext` binds `SelectedEmail`/`AvailableUpdate` via `x:Static` to `DesignData`. There is no startup auto update-check — updates are only checked when the user clicks the toolbar button.
 - **Compiled bindings on by default** (`AvaloniaUseCompiledBindingsByDefault=true`); views declare `x:DataType` on the root and per-`DataTemplate`.
 - **Startup order matters** (`Program.cs`): `VelopackApp.Build().Run()` runs first (may exit/restart for updates), then `BuildAvaloniaApp().StartWithClassicDesktopLifetime(args)`. `BuildAvaloniaApp` is also used by the visual designer — keep it. `App.axaml.cs` also removes `DataAnnotationsValidationPlugin` to avoid double validation with CommunityToolkit.
 
