@@ -135,7 +135,7 @@ namespace QuestLog.GUI.Services
             }
         }
 
-        private static IEnumerable<Email> ParseEmails(string rawOutput)
+        internal static IEnumerable<Email> ParseEmails(string rawOutput)
         {
             var emails = new List<Email>();
 
@@ -171,7 +171,7 @@ namespace QuestLog.GUI.Services
             return emails;
         }
 
-        private static DateTime ParseDate(string dateStr)
+        internal static DateTime ParseDate(string dateStr)
         {
             var localizedCultures = new[]
             {
