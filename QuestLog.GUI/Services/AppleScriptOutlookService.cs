@@ -47,7 +47,7 @@ namespace QuestLog.GUI.Services
             return result.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static string BuildGetEmailsScript(int count, bool unreadOnly)
+        internal static string BuildGetEmailsScript(int count, bool unreadOnly)
         {
             var filterClause = unreadOnly ? "whose is read is false" : "";
 
@@ -56,13 +56,13 @@ namespace QuestLog.GUI.Services
                 .Replace("__FILTER_CLAUSE__", filterClause, StringComparison.Ordinal);
         }
 
-        private static string BuildGetEmailByIdScript(string id)
+        internal static string BuildGetEmailByIdScript(string id)
         {
             return LoadScript(GetEmailByIdScriptResource)
                 .Replace("__MESSAGE_ID__", ValidateMessageId(id), StringComparison.Ordinal);
         }
 
-        private static string BuildMarkAsReadScript(string id)
+        internal static string BuildMarkAsReadScript(string id)
         {
             return LoadScript(MarkAsReadScriptResource)
                 .Replace("__MESSAGE_ID__", ValidateMessageId(id), StringComparison.Ordinal);
@@ -71,7 +71,7 @@ namespace QuestLog.GUI.Services
         // The id is interpolated unquoted into the AppleScript source, so it must be
         // digits-only; anything else could inject arbitrary AppleScript. Ids originate
         // from parsed (untrusted) output, so reject non-numeric values before substitution.
-        private static string ValidateMessageId(string id)
+        internal static string ValidateMessageId(string id)
         {
             if (string.IsNullOrEmpty(id) || id.Any(c => c < '0' || c > '9'))
             {
@@ -122,7 +122,7 @@ namespace QuestLog.GUI.Services
             return output;
         }
 
-        private static void EnsureAppleScriptIsSupported()
+        internal static void EnsureAppleScriptIsSupported()
         {
             if (!OperatingSystem.IsMacOS())
             {

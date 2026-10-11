@@ -98,7 +98,9 @@ jobs:
           fi
 
       - name: Build & publish
-        run: dotnet publish --configuration Release -o publish -r win-x64 -p:Version=$env:RELEASE_VERSION
+        # --project is required: other solution projects (tests, benchmarks) must
+        # not be published into the directory vpk packs into the installer.
+        run: dotnet publish QuestLog.GUI/QuestLog.GUI.csproj --configuration Release -o publish -r win-x64 -p:Version=$env:RELEASE_VERSION
 
       - name: Install Velopack CLI
         run: |

@@ -42,7 +42,7 @@ jobs:
       with:
         dotnet-version: "6"
         cache: true 
-        cache-dependency-path: QuestLog.GUI/packages.lock.json
+        cache-dependency-path: '**/packages.lock.json'
 
     - name: Run linter
       run: dotnet format --verify-no-changes QuestLog.slnx
@@ -70,3 +70,6 @@ jobs:
 
     - name: Build .NET 6
       run: dotnet build QuestLog.slnx --no-restore --configuration Release -p:Version=${{ steps.gitversion.outputs.semVer }}
+
+    - name: Run tests
+      run: dotnet test QuestLog.slnx --no-build --configuration Release
