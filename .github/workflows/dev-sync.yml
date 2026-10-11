@@ -1,0 +1,46 @@
+name: Sync master -> development
+description: Automatically sync changes from the master branch into the development branch.
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  backmerge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Backmerge master into development
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch origin development:refs/remotes/origin/development
+
+          if git merge-base --is-ancestor origin/master origin/development; then
+            echo "master is already fully merged into development — nothing to do"
+            exit 0
+          fi
+
+          existing=$(gh pr list --base development --head master --state open --json number --jq 'if length == 0 then "" else .[0].number end')
+
+          if [ -z "$existing" ]; then
+            gh pr create --base development --head master \
+              --title "Backmerge master into development" \
+              --body "Automated backmerge of \`master\` into \`development\`. Uses a merge commit to preserve shared ancestry — do not squash."
+            existing=$(gh pr list --base development --head master --state open --json number --jq '.[0].number')
+          fi
+
+          echo "Backmerge PR: #$existing"
+          gh pr merge "$existing" --auto --merge || \
+            gh pr merge "$existing" --merge || \
+            echo "::warning::Could not merge #$existing (conflicts or repo auto-merge disabled) — resolve manually"
