@@ -22,8 +22,8 @@ Startup/manual check → IUpdateService (VelopackUpdateService) → Velopack Upd
 
 - **MVVM via CommunityToolkit.Mvvm 8.2.1 source generators** — NOT ReactiveUI. `[ObservableProperty]` on `_camelCase` fields → `PascalCase` properties; `[RelayCommand]` on `async Task XxxAsync()` → `XxxCommand`; change hooks via `partial void OnXxxChanged(...)`. VMs must be `partial` and inherit `ViewModelBase : ObservableObject`.
 - **ViewLocator convention** (`ViewLocator.cs`): `QuestLog.GUI.ViewModels.FooViewModel` ↔ `QuestLog.GUI.Views.FooView` — name-symmetric or the view won't resolve (fallback renders `TextBlock "Not Found: …"`). Annotated `[RequiresUnreferencedCode]` (trimming trap).
-- **No DI container.** `App.axaml.cs` news up `MainWindowViewModel` via the `(IEmailService, IUpdateService)` ctor overload (`AppleScriptOutlookService` + `VelopackUpdateService`); the VM's parameterless ctor news up both services itself and is what the designer uses. Follow ctor-overload injection; don't half-wire a container.
-- **Design mode:** `App.axaml.cs` guards the startup auto update-check with `Design.IsDesignMode`; `MainWindow.axaml` `Design.DataContext` provides sample emails + a sample `AvailableUpdate`.
+- **No DI container.** `App.axaml.cs` news up `MainWindowViewModel` via the `(IEmailService, IUpdateService)` ctor overload (`AppleScriptOutlookService` + `VelopackUpdateService`); the VM's parameterless ctor — used only by the XAML loader/designer — wires the `DesignTime*` fakes instead. Follow ctor-overload injection; don't half-wire a container.
+- **Design mode:** the previewer does NOT reliably set `Design.IsDesignMode`, so design-time safety comes from the fakes: `DesignTimeEmailService`/`DesignTimeUpdateService` return `DesignData` samples and never run osascript or touch Velopack. `MainWindow.axaml` `Design.DataContext` binds `SelectedEmail`/`AvailableUpdate` via `x:Static` to `DesignData`; `App.axaml.cs` still guards the startup auto update-check with `Design.IsDesignMode`.
 - **Compiled bindings on by default** (`AvaloniaUseCompiledBindingsByDefault=true`); views declare `x:DataType` on the root and per-`DataTemplate`.
 - **Startup order matters** (`Program.cs`): `VelopackApp.Build().Run()` runs first (may exit/restart for updates), then `BuildAvaloniaApp().StartWithClassicDesktopLifetime(args)`. `BuildAvaloniaApp` is also used by the visual designer — keep it. `App.axaml.cs` also removes `DataAnnotationsValidationPlugin` to avoid double validation with CommunityToolkit.
 
@@ -34,7 +34,7 @@ Startup/manual check → IUpdateService (VelopackUpdateService) → Velopack Upd
 |`QuestLog.GUI/ViewModels/`|VMs (`MainWindowViewModel`, `ViewModelBase`)|
 |`QuestLog.GUI/Views/`|AXAML views (`MainWindow.axaml` + trivial code-behind)|
 |`QuestLog.GUI/Models/`|`Email : ObservableObject` (only `IsRead` uses `SetProperty`; other props are plain); `AvailableUpdate` (plain: `Version` + `NotesMarkdown`)|
-|`QuestLog.GUI/Services/`|`AppleScriptOutlookService` — sole `IEmailService` impl (process exec, wire parsing, token substitution); `VelopackUpdateService` — sole `IUpdateService` impl (Velopack `UpdateManager` + `GithubSource`)|
+|`QuestLog.GUI/Services/`|`AppleScriptOutlookService` — runtime `IEmailService` impl (process exec, wire parsing, token substitution); `VelopackUpdateService` — runtime `IUpdateService` impl (Velopack `UpdateManager` + `GithubSource`); `DesignTimeEmailService`/`DesignTimeUpdateService` — designer-only fakes returning `DesignData`|
 |`QuestLog.GUI/Interfaces/`|`IEmailService` (4 async methods; `GetEmailByIdAsync` currently unused); `IUpdateService` (`CheckForUpdatesAsync`/`DownloadUpdateAsync`/`ApplyUpdateAndRestartAsync` + `PendingUpdateNotes`)|
 |`QuestLog.GUI/Resources/AppleScripts/`|Embedded `*.applescript` templates (auto-embedded by csproj glob)|
 |`QuestLog.GUI/Converters/`|`BoolToFontWeightConverter` (unread = bold), registered app-wide|
