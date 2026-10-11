@@ -2,24 +2,29 @@ using System;
 using System.Threading.Tasks;
 using QuestLog.GUI.Interfaces;
 using Velopack;
+using Velopack.Sources;
 
 namespace QuestLog.GUI.Services
 {
     public class VelopackUpdateService : IUpdateService
     {
-        private const string DefaultFeedUrl = "https://github.com/marcin-przywoski/QuestLog/releases.atom";
+        private const string DefaultRepoUrl = "https://github.com/marcin-przywoski/QuestLog";
 
         private readonly UpdateManager _updateManager;
         private VelopackAsset? _pendingUpdate;
 
         public VelopackUpdateService()
-            : this(DefaultFeedUrl)
+            : this(DefaultRepoUrl)
         {
         }
 
-        public VelopackUpdateService(string feedUrlOrPath)
+        public VelopackUpdateService(string repoUrl)
         {
-            _updateManager = new UpdateManager(feedUrlOrPath);
+            // Releases are published by CD via `vpk upload github --channel <win|win-dev>`;
+            // GithubSource parses those Velopack assets and UpdateManager filters by the
+            // channel this install was packed with. prerelease: true so dev-channel releases
+            // are visible too — stable filtering happens via channel matching.
+            _updateManager = new UpdateManager(new GithubSource(repoUrl, accessToken: null, prerelease: true));
         }
 
         public async Task<UpdateInfo?> CheckForUpdatesAsync()
