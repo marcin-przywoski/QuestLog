@@ -1,10 +1,11 @@
+using System;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
-using System.Linq;
 using Avalonia.Markup.Xaml;
-using QuestLog.GUI.Services;
+using Microsoft.Extensions.DependencyInjection;
 using QuestLog.GUI.ViewModels;
 using QuestLog.GUI.Views;
 
@@ -12,6 +13,8 @@ namespace QuestLog.GUI
 {
     public partial class App : Application
     {
+        private IServiceProvider? _serviceProvider;
+
         public override void Initialize()
         {
             AvaloniaXamlLoader.Load(this);
@@ -24,10 +27,15 @@ namespace QuestLog.GUI
                 // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
                 // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
                 DisableAvaloniaDataAnnotationValidation();
-                MainWindowViewModel viewModel = new MainWindowViewModel(new AppleScriptOutlookService(), new VelopackUpdateService());
+
+                // Composition root: build the DI container and resolve the VM from it.
+                ServiceCollection services = new();
+                services.AddAppServices();
+                _serviceProvider = services.BuildServiceProvider();
+
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = viewModel,
+                    DataContext = _serviceProvider.GetRequiredService<MainWindowViewModel>(),
                 };
             }
 
