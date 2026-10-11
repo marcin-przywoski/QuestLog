@@ -59,13 +59,26 @@ namespace QuestLog.GUI.Services
         private static string BuildGetEmailByIdScript(string id)
         {
             return LoadScript(GetEmailByIdScriptResource)
-                .Replace("__MESSAGE_ID__", id, StringComparison.Ordinal);
+                .Replace("__MESSAGE_ID__", ValidateMessageId(id), StringComparison.Ordinal);
         }
 
         private static string BuildMarkAsReadScript(string id)
         {
             return LoadScript(MarkAsReadScriptResource)
-                .Replace("__MESSAGE_ID__", id, StringComparison.Ordinal);
+                .Replace("__MESSAGE_ID__", ValidateMessageId(id), StringComparison.Ordinal);
+        }
+
+        // The id is interpolated unquoted into the AppleScript source, so it must be
+        // digits-only; anything else could inject arbitrary AppleScript. Ids originate
+        // from parsed (untrusted) output, so reject non-numeric values before substitution.
+        private static string ValidateMessageId(string id)
+        {
+            if (string.IsNullOrEmpty(id) || id.Any(c => c < '0' || c > '9'))
+            {
+                throw new ArgumentException("Message id must consist of digits only.", nameof(id));
+            }
+
+            return id;
         }
 
         private static string LoadScript(string resourceName)
