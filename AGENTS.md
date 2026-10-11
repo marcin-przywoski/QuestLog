@@ -76,7 +76,7 @@ Enforced by `.editorconfig` + CI `dotnet format` gate — **whitespace/formattin
 
 - Feed is `GithubSource(repoUrl, accessToken: null, prerelease: true)` — matches CD's `vpk upload github --channel win|win-dev`; the install's packed channel filters stable vs dev. `DefaultRepoUrl` is the repo URL, not an atom feed.
 - `CheckForUpdatesAsync` returns `null` when `!UpdateManager.IsInstalled` (dev runs from source can't update) — callers must handle null.
-- `IUpdateService` keeps Velopack types (`UpdateInfo`) in its signatures because `VelopackAsset` can't be reconstructed from a plain model (`UpdateInfo` ctor needs assets; `UpdateManager.Locator` is private) — hence the service caches the target `VelopackAsset` internally and exposes `PendingUpdateNotes`; the VM maps it into the plain `AvailableUpdate` model.
+- `IUpdateService` keeps Velopack types (`UpdateInfo`) in its signatures because `VelopackAsset` can't be reconstructed from a plain model (`UpdateInfo` ctor needs assets; `UpdateManager.Locator` is private) — hence the service caches the target `VelopackAsset` **only after a successful download** and exposes `PendingUpdateNotes`; the VM maps it into the plain `AvailableUpdate` model. A re-check clears the cached asset and the banner.
 - `ApplyUpdateAndRestartAsync` throws `InvalidOperationException` if nothing was downloaded; success restarts the app (the method's `Task` never meaningfully completes).
 
 ## Important Files
@@ -121,9 +121,7 @@ CI/CodeQL triggers are **path-filtered to `**.cs`, `**.csproj`, `**.axaml`** —
 - `GitVersion.yml`: the built-in `main` rule (`^master$|^main$`, Patch increment) **shadows the user `master:` block** (`mode: ContinuousDeployment`, `increment: None`) — the block is dead config.
 - `CD.yml:76` comment says `win-alpha` channel — actual is `win-dev` (comment is stale, code is right).
 - `Email` model: only `IsRead` raises change notification; other properties are plain auto-props.
-- The update notice is a full-width banner between toolbar and content (never hides the emails); `OnShowUnreadOnlyChanged` returns early when `Design.IsDesignMode` so the designer never runs real email loading.
 - `GetEmailByIdAsync`/`GetEmailById.applescript` have no callers.
-- When an update is available the update panel **replaces** the email list/detail (mutually exclusive `IsVisible` on `AvailableUpdate` IsNull/IsNotNull) — reading mail is blocked until restart.
 - Velopack 0.0.556 API traps: no parameterless `UpdateManager()` ctor (must pass a feed/`IUpdateSource`); `VelopackAsset` has **no `Id`** property; `ApplyUpdatesAndRestart(string[])` overload is deprecated — use `ApplyUpdatesAndRestart(VelopackAsset, string[])`.
 - CD ships a `win-x64` Velopack package for a macOS-only app.
 - `.vscode/settings.json` hardcodes author-machine absolute paths (`axaml.selectedSolution`, dotrush); `QuestLog.GUI/.vscode/settings.json` has a stale solution path.

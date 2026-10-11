@@ -25,7 +25,7 @@ namespace QuestLog.GUI
                 // Avoid duplicate validations from both Avalonia and the CommunityToolkit. 
                 // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
                 DisableAvaloniaDataAnnotationValidation();
-                var viewModel = new MainWindowViewModel(new AppleScriptOutlookService(), new VelopackUpdateService());
+                MainWindowViewModel viewModel = new MainWindowViewModel(new AppleScriptOutlookService(), new VelopackUpdateService());
                 desktop.MainWindow = new MainWindow
                 {
                     DataContext = viewModel,

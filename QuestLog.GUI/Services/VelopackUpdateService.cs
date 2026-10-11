@@ -37,14 +37,21 @@ namespace QuestLog.GUI.Services
                 return null;
             }
 
-            var update = await _updateManager.CheckForUpdatesAsync();
-            _pendingUpdate = update?.TargetFullRelease;
+            // A re-check invalidates any previously downloaded package until it is
+            // downloaded again (see DownloadUpdateAsync).
+            _pendingUpdate = null;
+
+            UpdateInfo? update = await _updateManager.CheckForUpdatesAsync();
             return update;
         }
 
         public async Task DownloadUpdateAsync(UpdateInfo update)
         {
             await _updateManager.DownloadUpdatesAsync(update, null, true);
+
+            // Only applicable once the package is actually downloaded.
+            _pendingUpdate = update.TargetFullRelease
+                ?? throw new InvalidOperationException("Update has no full release package.");
         }
 
         public Task ApplyUpdateAndRestartAsync()

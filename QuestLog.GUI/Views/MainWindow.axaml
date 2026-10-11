@@ -43,18 +43,19 @@
                 <Button Content="Restart to update" 
                       Command="{Binding ApplyUpdateCommand}"
                       IsVisible="{Binding AvailableUpdate, Converter={x:Static converters:ObjectConverters.IsNotNull}}"
-                      ToolTip.Tip="{Binding AvailableUpdate.Version, StringFormat='Downloaded update: {0}'}"
+                      IsEnabled="{Binding !IsCheckingForUpdates}"
                       Padding="15,8"/>
                 <ProgressBar IsIndeterminate="True" 
-                             IsVisible="{Binding IsLoading}"
                              Width="100"
                              VerticalAlignment="Center"
-                             Margin="20,0,0,0"/>
-                <ProgressBar IsIndeterminate="True" 
-                             IsVisible="{Binding IsCheckingForUpdates}"
-                             Width="100"
-                             VerticalAlignment="Center"
-                             Margin="20,0,0,0"/>
+                             Margin="20,0,0,0">
+                    <ProgressBar.IsVisible>
+                        <MultiBinding Converter="{StaticResource BooleanOrConverter}">
+                            <Binding Path="IsLoading"/>
+                            <Binding Path="IsCheckingForUpdates"/>
+                        </MultiBinding>
+                    </ProgressBar.IsVisible>
+                </ProgressBar>
             </StackPanel>
         </Border>
 

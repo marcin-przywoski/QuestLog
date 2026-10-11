@@ -8,6 +8,7 @@
 
     <Application.Resources>
         <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter"/>
+        <converters:BooleanOrConverter x:Key="BooleanOrConverter"/>
     </Application.Resources>
 
     <Application.DataTemplates>

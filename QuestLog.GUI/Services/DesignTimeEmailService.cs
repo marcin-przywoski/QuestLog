@@ -19,7 +19,7 @@ namespace QuestLog.GUI.Services
 
         public Task<IEnumerable<Email>> GetUnreadEmailsAsync(int count = 50)
         {
-            return Task.FromResult(DesignData.Emails);
+            return Task.FromResult(DesignData.Emails.Where(email => !email.IsRead));
         }
 
         public Task<Email?> GetEmailByIdAsync(string id)

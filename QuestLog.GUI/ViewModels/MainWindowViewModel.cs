@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using QuestLog.GUI.Interfaces;
 using QuestLog.GUI.Models;
 using QuestLog.GUI.Services;
+using Velopack;
 
 namespace QuestLog.GUI.ViewModels
 {
@@ -125,15 +126,17 @@ namespace QuestLog.GUI.ViewModels
                 IsCheckingForUpdates = true;
                 StatusMessage = "Checking for updates...";
 
-                var update = await _updateService.CheckForUpdatesAsync();
+                // Hide the stale banner (and its restart button) while re-checking.
+                AvailableUpdate = null;
+
+                UpdateInfo? update = await _updateService.CheckForUpdatesAsync();
                 if (update == null)
                 {
-                    AvailableUpdate = null;
                     StatusMessage = "App is up to date";
                     return;
                 }
 
-                var version = update.TargetFullRelease?.Version?.ToString() ?? "unknown";
+                string version = update.TargetFullRelease?.Version?.ToString() ?? "unknown";
                 StatusMessage = $"Update {version} available - downloading...";
                 await _updateService.DownloadUpdateAsync(update);
 
