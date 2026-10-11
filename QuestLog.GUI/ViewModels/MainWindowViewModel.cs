@@ -6,12 +6,14 @@ using CommunityToolkit.Mvvm.Input;
 using QuestLog.GUI.Interfaces;
 using QuestLog.GUI.Models;
 using QuestLog.GUI.Services;
+using Velopack;
 
 namespace QuestLog.GUI.ViewModels
 {
     public partial class MainWindowViewModel : ViewModelBase
     {
         private readonly IEmailService _emailService;
+        private readonly IUpdateService _updateService;
 
         [ObservableProperty]
         private ObservableCollection<Email> _emails = new();
@@ -28,14 +30,23 @@ namespace QuestLog.GUI.ViewModels
         [ObservableProperty]
         private bool _showUnreadOnly;
 
+        [ObservableProperty]
+        private AvailableUpdate? _availableUpdate;
+
+        [ObservableProperty]
+        private bool _isCheckingForUpdates;
+
         public MainWindowViewModel()
         {
-            _emailService = new AppleScriptOutlookService();
+            // Design-time / previewer path: sample data only - never real Outlook or Velopack.
+            _emailService = new DesignTimeEmailService();
+            _updateService = new DesignTimeUpdateService();
         }
 
-        public MainWindowViewModel(IEmailService emailService)
+        public MainWindowViewModel(IEmailService emailService, IUpdateService updateService)
         {
             _emailService = emailService;
+            _updateService = updateService;
         }
 
         [RelayCommand]
@@ -100,6 +111,63 @@ namespace QuestLog.GUI.ViewModels
                 }
 
                 StatusMessage = "Email marked as read";
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+            }
+        }
+
+        [RelayCommand]
+        private async Task CheckForUpdatesAsync()
+        {
+            // Hide the stale banner (and its restart button) while re-checking; restored
+            // in the catch below if the re-check fails so a downloaded update stays reachable.
+            AvailableUpdate? previousUpdate = AvailableUpdate;
+            AvailableUpdate = null;
+
+            try
+            {
+                IsCheckingForUpdates = true;
+                StatusMessage = "Checking for updates...";
+
+                UpdateInfo? update = await _updateService.CheckForUpdatesAsync();
+                if (update == null)
+                {
+                    StatusMessage = "App is up to date";
+                    return;
+                }
+
+                string version = update.TargetFullRelease?.Version?.ToString() ?? "unknown";
+                StatusMessage = $"Update {version} available - downloading...";
+                await _updateService.DownloadUpdateAsync(update);
+
+                AvailableUpdate = new AvailableUpdate
+                {
+                    Version = version,
+                    NotesMarkdown = _updateService.PendingUpdateNotes,
+                };
+                StatusMessage = $"Update {version} ready - restart to update";
+            }
+            catch (Exception ex)
+            {
+                // Re-check failed - keep the previously downloaded update reachable.
+                AvailableUpdate = previousUpdate;
+                StatusMessage = $"Error: {ex.Message}";
+            }
+            finally
+            {
+                IsCheckingForUpdates = false;
+            }
+        }
+
+        [RelayCommand]
+        private async Task ApplyUpdateAsync()
+        {
+            try
+            {
+                StatusMessage = "Applying update...";
+                await _updateService.ApplyUpdateAndRestartAsync();
             }
             catch (Exception ex)
             {
