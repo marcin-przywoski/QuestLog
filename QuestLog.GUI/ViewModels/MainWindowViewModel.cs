@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using QuestLog.GUI.Interfaces;
@@ -169,6 +170,12 @@ namespace QuestLog.GUI.ViewModels
 
         partial void OnShowUnreadOnlyChanged(bool value)
         {
+            // Never trigger real email loading at design time - the designer shows sample data only.
+            if (Design.IsDesignMode)
+            {
+                return;
+            }
+
             _ = LoadEmailsAsync();
         }
     }

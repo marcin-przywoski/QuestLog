@@ -17,7 +17,7 @@ Toolbar command → IEmailService → embedded .applescript (__TOKEN__ substitut
 
 Startup/manual check → IUpdateService (VelopackUpdateService) → Velopack UpdateManager(GithubSource)
   → UpdateInfo → download → AvailableUpdate (Version + NotesMarkdown)
-  → update panel replaces email list/detail (IsVisible toggles); restart applies + relaunches
+  → update banner above the emails (never replaces them); restart applies + relaunches
 ```
 
 - **MVVM via CommunityToolkit.Mvvm 8.2.1 source generators** — NOT ReactiveUI. `[ObservableProperty]` on `_camelCase` fields → `PascalCase` properties; `[RelayCommand]` on `async Task XxxAsync()` → `XxxCommand`; change hooks via `partial void OnXxxChanged(...)`. VMs must be `partial` and inherit `ViewModelBase : ObservableObject`.
@@ -121,6 +121,7 @@ CI/CodeQL triggers are **path-filtered to `**.cs`, `**.csproj`, `**.axaml`** —
 - `GitVersion.yml`: the built-in `main` rule (`^master$|^main$`, Patch increment) **shadows the user `master:` block** (`mode: ContinuousDeployment`, `increment: None`) — the block is dead config.
 - `CD.yml:76` comment says `win-alpha` channel — actual is `win-dev` (comment is stale, code is right).
 - `Email` model: only `IsRead` raises change notification; other properties are plain auto-props.
+- The update notice is a full-width banner between toolbar and content (never hides the emails); `OnShowUnreadOnlyChanged` returns early when `Design.IsDesignMode` so the designer never runs real email loading.
 - `GetEmailByIdAsync`/`GetEmailById.applescript` have no callers.
 - When an update is available the update panel **replaces** the email list/detail (mutually exclusive `IsVisible` on `AvailableUpdate` IsNull/IsNotNull) — reading mail is blocked until restart.
 - Velopack 0.0.556 API traps: no parameterless `UpdateManager()` ctor (must pass a feed/`IUpdateSource`); `VelopackAsset` has **no `Id`** property; `ApplyUpdatesAndRestart(string[])` overload is deprecated — use `ApplyUpdatesAndRestart(VelopackAsset, string[])`.
