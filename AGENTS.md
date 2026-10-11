@@ -14,11 +14,16 @@ Single-project MVVM app — `QuestLog.slnx` contains only `QuestLog.GUI/QuestLog
 Toolbar command → IEmailService → embedded .applescript (__TOKEN__ substitution)
   → /usr/bin/osascript -e <script> → stdout (<<EMAIL>> records, "||" fields)
   → ParseEmails → ObservableCollection<Email> → compiled bindings
+
+Startup/manual check → IUpdateService (VelopackUpdateService) → Velopack UpdateManager(GithubSource)
+  → UpdateInfo → download → AvailableUpdate (Version + NotesMarkdown)
+  → update panel replaces email list/detail (IsVisible toggles); restart applies + relaunches
 ```
 
 - **MVVM via CommunityToolkit.Mvvm 8.2.1 source generators** — NOT ReactiveUI. `[ObservableProperty]` on `_camelCase` fields → `PascalCase` properties; `[RelayCommand]` on `async Task XxxAsync()` → `XxxCommand`; change hooks via `partial void OnXxxChanged(...)`. VMs must be `partial` and inherit `ViewModelBase : ObservableObject`.
 - **ViewLocator convention** (`ViewLocator.cs`): `QuestLog.GUI.ViewModels.FooViewModel` ↔ `QuestLog.GUI.Views.FooView` — name-symmetric or the view won't resolve (fallback renders `TextBlock "Not Found: …"`). Annotated `[RequiresUnreferencedCode]` (trimming trap).
-- **No DI container.** `App.axaml.cs` news up `MainWindowViewModel`; its parameterless ctor news up `AppleScriptOutlookService`. An `IEmailService` ctor overload exists for testability. Follow ctor-overload injection; don't half-wire a container.
+- **No DI container.** `App.axaml.cs` news up `MainWindowViewModel` via the `(IEmailService, IUpdateService)` ctor overload (`AppleScriptOutlookService` + `VelopackUpdateService`); the VM's parameterless ctor news up both services itself and is what the designer uses. Follow ctor-overload injection; don't half-wire a container.
+- **Design mode:** `App.axaml.cs` guards the startup auto update-check with `Design.IsDesignMode`; `MainWindow.axaml` `Design.DataContext` provides sample emails + a sample `AvailableUpdate`.
 - **Compiled bindings on by default** (`AvaloniaUseCompiledBindingsByDefault=true`); views declare `x:DataType` on the root and per-`DataTemplate`.
 - **Startup order matters** (`Program.cs`): `VelopackApp.Build().Run()` runs first (may exit/restart for updates), then `BuildAvaloniaApp().StartWithClassicDesktopLifetime(args)`. `BuildAvaloniaApp` is also used by the visual designer — keep it. `App.axaml.cs` also removes `DataAnnotationsValidationPlugin` to avoid double validation with CommunityToolkit.
 
@@ -28,9 +33,9 @@ Toolbar command → IEmailService → embedded .applescript (__TOKEN__ substitut
 |---|---|
 |`QuestLog.GUI/ViewModels/`|VMs (`MainWindowViewModel`, `ViewModelBase`)|
 |`QuestLog.GUI/Views/`|AXAML views (`MainWindow.axaml` + trivial code-behind)|
-|`QuestLog.GUI/Models/`|`Email : ObservableObject` (only `IsRead` uses `SetProperty`; other props are plain)|
-|`QuestLog.GUI/Services/`|`AppleScriptOutlookService` — sole `IEmailService` impl (process exec, wire parsing, token substitution)|
-|`QuestLog.GUI/Interfaces/`|`IEmailService` (4 async methods; `GetEmailByIdAsync` currently unused)|
+|`QuestLog.GUI/Models/`|`Email : ObservableObject` (only `IsRead` uses `SetProperty`; other props are plain); `AvailableUpdate` (plain: `Version` + `NotesMarkdown`)|
+|`QuestLog.GUI/Services/`|`AppleScriptOutlookService` — sole `IEmailService` impl (process exec, wire parsing, token substitution); `VelopackUpdateService` — sole `IUpdateService` impl (Velopack `UpdateManager` + `GithubSource`)|
+|`QuestLog.GUI/Interfaces/`|`IEmailService` (4 async methods; `GetEmailByIdAsync` currently unused); `IUpdateService` (`CheckForUpdatesAsync`/`DownloadUpdateAsync`/`ApplyUpdateAndRestartAsync` + `PendingUpdateNotes`)|
 |`QuestLog.GUI/Resources/AppleScripts/`|Embedded `*.applescript` templates (auto-embedded by csproj glob)|
 |`QuestLog.GUI/Converters/`|`BoolToFontWeightConverter` (unread = bold), registered app-wide|
 |`QuestLog.GUI/Assets/`|`AvaloniaResource` glob (app icon)|
@@ -57,7 +62,7 @@ Always pass `QuestLog.slnx` or `--project QuestLog.GUI` explicitly. `BuildInfo.t
 Enforced by `.editorconfig` + CI `dotnet format` gate — **whitespace/formatting only**. Every naming and style rule is suggestion-level (no build/CI failure): 4-space indent, LF endings (CRLF checkouts via `core.autocrlf` will fail the verify), block-scoped namespaces, usings outside namespace, prefer explicit types (`csharp_style_var_* = false` — convention, not enforced), `_camelCase` private fields, `PascalCase` publics, `I`-prefixed interfaces in `Interfaces/`, namespace = folder. Roslynator.Analyzers 3.1.0 + Formatting.Analyzers 1.1.0 are referenced (analyzers-only).
 
 - **Error handling:** services throw typed exceptions (`PlatformNotSupportedException`, `FileNotFoundException`, `InvalidOperationException`, `ArgumentException`); VM commands `try/catch (Exception ex)` → `StatusMessage = $"Error: {ex.Message}"`, `IsLoading` reset in `finally`. No logging, no dialogs, no rethrow.
-- **Async:** `async Task` methods suffixed `Async`; no `async void`. One deliberate fire-and-forget: `_ = ReloadEmailsAsync()` in `OnShowUnreadOnlyChanged`, guarded by `_reloadRequested`/`_isReloading` coalescing flags that await the in-flight `LoadEmailsCommand.ExecutionTask`.
+- **Async:** `async Task` methods suffixed `Async`; no `async void`. One deliberate fire-and-forget: `_ = LoadEmailsAsync()` in `OnShowUnreadOnlyChanged`.
 - **Process exec:** `ProcessStartInfo.ArgumentList` passes the entire script as one `-e` arg (no shell quoting); stdout/stderr `ReadToEndAsync` started before `WaitForExitAsync` (deadlock-safe); 2-minute timeout kills the process tree; non-zero exit → `InvalidOperationException` with stderr.
 
 **AppleScript conventions** (`AppleScriptOutlookService.cs`):
@@ -66,6 +71,13 @@ Enforced by `.editorconfig` + CI `dotnet format` gate — **whitespace/formattin
 - Wire format is a contract: records separated by `<<EMAIL>>`, fields by `||`, exactly 7 fields in order `Id | Subject | Sender | SenderEmail | ReceivedDate | IsRead | Body` (split capped at 7 so `||` in body is absorbed; scripts also `sanitizeText` to strip separators). Keep scripts and `ParseEmails` in sync; malformed records are silently skipped.
 - `MarkAsRead` contract: script must return literal `true`/`false` (compared OrdinalIgnoreCase).
 - `ParseDate` tries CurrentCulture + `pl-PL` + 6 explicit formats; unparseable → `DateTime.MinValue` (never throws). Add new Outlook-localized formats to the array.
+
+**Update conventions** (`VelopackUpdateService.cs`):
+
+- Feed is `GithubSource(repoUrl, accessToken: null, prerelease: true)` — matches CD's `vpk upload github --channel win|win-dev`; the install's packed channel filters stable vs dev. `DefaultRepoUrl` is the repo URL, not an atom feed.
+- `CheckForUpdatesAsync` returns `null` when `!UpdateManager.IsInstalled` (dev runs from source can't update) — callers must handle null.
+- `IUpdateService` keeps Velopack types (`UpdateInfo`) in its signatures because `VelopackAsset` can't be reconstructed from a plain model (`UpdateInfo` ctor needs assets; `UpdateManager.Locator` is private) — hence the service caches the target `VelopackAsset` internally and exposes `PendingUpdateNotes`; the VM maps it into the plain `AvailableUpdate` model.
+- `ApplyUpdateAndRestartAsync` throws `InvalidOperationException` if nothing was downloaded; success restarts the app (the method's `Task` never meaningfully completes).
 
 ## Important Files
 
@@ -109,7 +121,9 @@ CI/CodeQL triggers are **path-filtered to `**.cs`, `**.csproj`, `**.axaml`** —
 - `GitVersion.yml`: the built-in `main` rule (`^master$|^main$`, Patch increment) **shadows the user `master:` block** (`mode: ContinuousDeployment`, `increment: None`) — the block is dead config.
 - `CD.yml:76` comment says `win-alpha` channel — actual is `win-dev` (comment is stale, code is right).
 - `Email` model: only `IsRead` raises change notification; other properties are plain auto-props.
-- `GetEmailByIdAsync`/`GetEmailById.applescript` and the `IEmailService` ctor overload have no callers.
+- `GetEmailByIdAsync`/`GetEmailById.applescript` have no callers.
+- When an update is available the update panel **replaces** the email list/detail (mutually exclusive `IsVisible` on `AvailableUpdate` IsNull/IsNotNull) — reading mail is blocked until restart.
+- Velopack 0.0.556 API traps: no parameterless `UpdateManager()` ctor (must pass a feed/`IUpdateSource`); `VelopackAsset` has **no `Id`** property; `ApplyUpdatesAndRestart(string[])` overload is deprecated — use `ApplyUpdatesAndRestart(VelopackAsset, string[])`.
 - CD ships a `win-x64` Velopack package for a macOS-only app.
 - `.vscode/settings.json` hardcodes author-machine absolute paths (`axaml.selectedSolution`, dotrush); `QuestLog.GUI/.vscode/settings.json` has a stale solution path.
 - Design-time `MainWindow.axaml` sample emails use non-numeric `Id`s (`email-001`) — would fail `ValidateMessageId` if MarkAsRead ran on them; harmless at design time.

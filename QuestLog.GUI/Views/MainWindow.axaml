@@ -13,8 +13,11 @@
         Width="1000" Height="600">
 
     <Design.DataContext>
-        <vm:MainWindowViewModel ShowUnreadOnly="True" StatusMessage="Loaded 3 email(s)"
-                                AvailableUpdate="{x:Null}">
+        <vm:MainWindowViewModel ShowUnreadOnly="True" StatusMessage="Update 0.2.0 ready - restart to update">
+            <vm:MainWindowViewModel.AvailableUpdate>
+                <models:AvailableUpdate Version="0.2.0"
+                                        NotesMarkdown="## What's new&#10;&#10;* Update panel with release notes&#10;* Auto-check for updates on startup&#10;&#10;### Fixes&#10;&#10;* Fixed status bar errors not clearing" />
+            </vm:MainWindowViewModel.AvailableUpdate>
             <vm:MainWindowViewModel.Emails>
                 <models:Email Id="email-001"
                               Subject="Project kickoff and next steps"
