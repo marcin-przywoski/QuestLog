@@ -101,17 +101,19 @@ On pushes/PRs to `master`, `development`, `feature/**`, `enhancement/**`, `fix/*
 
 On pushes to `master`/`development` and `*.*.*` tags (Windows runner):
 
-1. `dotnet publish -r win-x64`
-2. `vpk pack` builds a Velopack package (with delta updates against the previous release **on the same channel**)
-3. Release notes generated via `gh api releases/generate-notes`; `dotnet gitreleasemanager create` creates a **draft** release (`--pre` for prereleases)
+1. GitVersion computes the version; tag builds must match the tag's version
+2. `dotnet publish -r win-x64` builds the application; `vpk pack` builds a Velopack package, using the previous release on the same channel for deltas when available
+3. Release notes are generated via `gh api releases/generate-notes`; `dotnet gitreleasemanager create` creates a **draft** release (`--pre` for prereleases)
 4. Velopack assets are uploaded with `vpk upload github --merge`, then `dotnet gitreleasemanager publish` publishes the release
 
-**Update channels:** stable releases feed the default `win` channel; prereleases feed `win-{label}` (`development` builds → `win-alpha`). Installed apps only receive updates from the channel their package was built for — stable installs never see `alpha` builds and vice versa.
+**Update channels:** stable releases feed the default `win` channel; prereleases feed `win-{label}` (`development` builds → `win-dev`). Installed apps only receive updates from the channel their package was built for. Users need to install the new channel's package to continue receiving development updates.
+
+**Platform note:** CD currently produces a `win-x64` package, although Outlook integration requires macOS. This package does not provide working Outlook integration on Windows.
 
 A `dev-sync.yml` workflow automatically opens a `master` → `development` sync PR after pushes to `master` (e.g. hotfixes).
 
 ## Contributing
 
 - Follow the existing `.editorconfig` style — CI enforces `dotnet format`.
-- Branch from `development` for features (`feature/*`) and fixes (`fix/*`); hotfixes branch from `master`.
+- Branch from `development` for features (`feature/*`, `enhancement/*`) and fixes (`fix/*`, `hotfix/*`); hotfixes branch from `master`.
 - Keep the `IEmailService` contract intact when adding providers.
