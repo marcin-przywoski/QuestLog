@@ -32,22 +32,24 @@ namespace QuestLog.GUI.Services
         public async Task<UpdateInfo?> CheckForUpdatesAsync()
         {
             // Updates only work for Velopack-installed builds (not dev runs from source).
+            // Throw instead of returning null so callers can tell "can't update" from "no update".
             if (!_updateManager.IsInstalled)
             {
-                return null;
+                throw new InvalidOperationException(
+                    "Updates are unavailable: this build was not installed via Velopack.");
             }
 
-            // A re-check invalidates any previously downloaded package until it is
-            // downloaded again (see DownloadUpdateAsync).
-            _pendingUpdate = null;
-
+            // Note: _pendingUpdate is intentionally NOT cleared here - a failed re-check must
+            // leave an already-downloaded package applicable (see DownloadUpdateAsync).
             UpdateInfo? update = await _updateManager.CheckForUpdatesAsync();
             return update;
         }
 
         public async Task DownloadUpdateAsync(UpdateInfo update)
         {
-            await _updateManager.DownloadUpdatesAsync(update, null, true);
+            // ignoreDeltas left at its default (false): the CD pipeline publishes delta
+            // packages, so use them to keep downloads small.
+            await _updateManager.DownloadUpdatesAsync(update);
 
             // Only applicable once the package is actually downloaded.
             _pendingUpdate = update.TargetFullRelease

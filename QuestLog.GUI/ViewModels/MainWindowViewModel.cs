@@ -121,13 +121,15 @@ namespace QuestLog.GUI.ViewModels
         [RelayCommand]
         private async Task CheckForUpdatesAsync()
         {
+            // Hide the stale banner (and its restart button) while re-checking; restored
+            // in the catch below if the re-check fails so a downloaded update stays reachable.
+            AvailableUpdate? previousUpdate = AvailableUpdate;
+            AvailableUpdate = null;
+
             try
             {
                 IsCheckingForUpdates = true;
                 StatusMessage = "Checking for updates...";
-
-                // Hide the stale banner (and its restart button) while re-checking.
-                AvailableUpdate = null;
 
                 UpdateInfo? update = await _updateService.CheckForUpdatesAsync();
                 if (update == null)
@@ -149,6 +151,8 @@ namespace QuestLog.GUI.ViewModels
             }
             catch (Exception ex)
             {
+                // Re-check failed - keep the previously downloaded update reachable.
+                AvailableUpdate = previousUpdate;
                 StatusMessage = $"Error: {ex.Message}";
             }
             finally
