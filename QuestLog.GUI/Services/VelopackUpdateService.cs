@@ -33,10 +33,10 @@ namespace QuestLog.GUI.Services
         {
             // Updates only work for Velopack-installed builds (not dev runs from source).
             // Throw instead of returning null so callers can tell "can't update" from "no update".
-            if (!_updateManager.IsInstalled)
+            if (!_updateManager.IsInstalled && !_updateManager.IsPortable)
             {
                 throw new InvalidOperationException(
-                    "Updates are unavailable: this build was not installed via Velopack.");
+                    "Updates are unavailable: this build was not installed via Velopack or the build is not portable.");
             }
 
             // Note: _pendingUpdate is intentionally NOT cleared here - a failed re-check must
