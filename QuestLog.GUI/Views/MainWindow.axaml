@@ -13,47 +13,13 @@
         Width="1000" Height="600">
 
     <Design.DataContext>
-        <vm:MainWindowViewModel ShowUnreadOnly="True" StatusMessage="Loaded 3 email(s)">
-            <vm:MainWindowViewModel.Emails>
-                <models:Email Id="email-001"
-                              Subject="Project kickoff and next steps"
-                              Sender="Elena Rodriguez"
-                              SenderEmail="elena.rodriguez@example.com"
-                              ReceivedDate="2026-08-05T09:24:00"
-                              Body="Thanks for joining the kickoff. I have attached the initial scope and outlined the next steps for the team. Please share any questions before Friday."
-                              IsRead="False"
-                              Folder="Inbox"/>
-                <models:Email Id="email-002"
-                              Subject="Design review notes"
-                              Sender="Marcus Chen"
-                              SenderEmail="marcus.chen@example.com"
-                              ReceivedDate="2026-08-04T16:10:00"
-                              Body="The updated flow looks good. I added a few notes about the empty state and the loading experience for us to review."
-                              IsRead="False"
-                              Folder="Inbox"/>
-                <models:Email Id="email-003"
-                              Subject="Weekly team update"
-                              Sender="Priya Shah"
-                              SenderEmail="priya.shah@example.com"
-                              ReceivedDate="2026-08-04T08:45:00"
-                              Body="A quick update from this week: the integration is on track, and the remaining tasks are ready for validation."
-                              IsRead="True"
-                              Folder="Inbox"/>
-            </vm:MainWindowViewModel.Emails>
-            <vm:MainWindowViewModel.SelectedEmail>
-                <models:Email Id="email-001"
-                              Subject="Project kickoff and next steps"
-                              Sender="Elena Rodriguez"
-                              SenderEmail="elena.rodriguez@example.com"
-                              ReceivedDate="2026-08-05T09:24:00"
-                              Body="Thanks for joining the kickoff. I have attached the initial scope and outlined the next steps for the team. Please share any questions before Friday."
-                              IsRead="False"
-                              Folder="Inbox"/>
-            </vm:MainWindowViewModel.SelectedEmail>
-        </vm:MainWindowViewModel>
+        <vm:MainWindowViewModel ShowUnreadOnly="True"
+                                StatusMessage="Loaded 3 email(s)"
+                                SelectedEmail="{x:Static models:DesignData.KickoffEmail}"
+                                AvailableUpdate="{x:Static models:DesignData.SampleUpdate}" />
     </Design.DataContext>
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
         
         <!-- Toolbar -->
         <Border Grid.Row="0" Background="#f0f0f0" Padding="10">
@@ -70,16 +36,47 @@
                           IsChecked="{Binding ShowUnreadOnly}"
                           VerticalAlignment="Center"
                           Margin="20,0,0,0"/>
+                <Button Content="Check for updates" 
+                        Command="{Binding CheckForUpdatesCommand}"
+                        IsEnabled="{Binding !IsCheckingForUpdates}"
+                        Padding="15,8"/>
+                <Button Content="Restart to update" 
+                      Command="{Binding ApplyUpdateCommand}"
+                      IsVisible="{Binding AvailableUpdate, Converter={x:Static converters:ObjectConverters.IsNotNull}}"
+                      IsEnabled="{Binding !IsCheckingForUpdates}"
+                      Padding="15,8"/>
                 <ProgressBar IsIndeterminate="True" 
-                             IsVisible="{Binding IsLoading}"
                              Width="100"
                              VerticalAlignment="Center"
-                             Margin="20,0,0,0"/>
+                             Margin="20,0,0,0">
+                    <ProgressBar.IsVisible>
+                        <MultiBinding Converter="{x:Static converters:BoolConverters.Or}">
+                            <Binding Path="IsLoading"/>
+                            <Binding Path="IsCheckingForUpdates"/>
+                        </MultiBinding>
+                    </ProgressBar.IsVisible>
+                </ProgressBar>
             </StackPanel>
         </Border>
 
+        <!-- Update notice (release notes) - shown above the emails, never replaces them -->
+        <Border Grid.Row="1" Background="#fffbe6" BorderBrush="#e6d9a8" BorderThickness="0,1,0,1" Padding="16,10"
+                IsVisible="{Binding AvailableUpdate, Converter={x:Static converters:ObjectConverters.IsNotNull}}">
+            <ScrollViewer MaxHeight="180" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="6" DataContext="{Binding AvailableUpdate}">
+                    <TextBlock Text="{Binding Version, StringFormat='Update {0} available - restart to update'}"
+                               FontWeight="SemiBold"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding NotesMarkdown}"
+                               TextWrapping="Wrap"
+                               FontSize="12"
+                               Foreground="Gray"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
         <!-- Main Content -->
-        <Grid Grid.Row="1" ColumnDefinitions="350,*">
+        <Grid Grid.Row="2" ColumnDefinitions="350,*">
             
             <!-- Email List -->
             <Border Grid.Column="0" BorderBrush="#e0e0e0" BorderThickness="0,0,1,0">
@@ -142,7 +139,7 @@
         </Grid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="2" Background="#f0f0f0" Padding="10,5">
+        <Border Grid.Row="3" Background="#f0f0f0" Padding="10,5">
             <TextBlock Text="{Binding StatusMessage}" Foreground="Gray"/>
         </Border>
     </Grid>
