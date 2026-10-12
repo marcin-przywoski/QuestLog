@@ -8,11 +8,19 @@ namespace QuestLog.Tests.Fakes
     /// <summary>Scriptable <see cref="IUpdateService"/> for view-model tests.</summary>
     public class FakeUpdateService : IUpdateService
     {
-        /// <summary>When set, thrown by every method to simulate service failures.</summary>
+        /// <summary>When set, thrown by <see cref="CheckForUpdatesAsync"/>.</summary>
         public Exception? CheckException { get; set; }
+
+        /// <summary>When set, thrown by <see cref="ApplyUpdateAndRestartAsync"/>.</summary>
         public Exception? ApplyException { get; set; }
+
+        /// <summary>Returned by <see cref="CheckForUpdatesAsync"/>; null = up to date.</summary>
+        public UpdateInfo? UpdateInfoResult { get; set; }
+
         public int CheckCallCount { get; private set; }
+        public int DownloadCallCount { get; private set; }
         public int ApplyCallCount { get; private set; }
+        public UpdateInfo? LastDownloadedUpdate { get; private set; }
 
         public string PendingUpdateNotes { get; set; } = string.Empty;
 
@@ -24,11 +32,13 @@ namespace QuestLog.Tests.Fakes
                 throw CheckException;
             }
 
-            return Task.FromResult<UpdateInfo?>(null);
+            return Task.FromResult<UpdateInfo?>(UpdateInfoResult);
         }
 
         public Task DownloadUpdateAsync(UpdateInfo update)
         {
+            DownloadCallCount++;
+            LastDownloadedUpdate = update;
             return Task.CompletedTask;
         }
 

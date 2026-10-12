@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using QuestLog.GUI.Models;
 using QuestLog.GUI.ViewModels;
 using QuestLog.Tests.Fakes;
+using Velopack;
 using Xunit;
 
 namespace QuestLog.Tests
@@ -149,6 +150,45 @@ namespace QuestLog.Tests
 
             Assert.StartsWith("Error: ", vm.StatusMessage);
             Assert.Contains("No update", vm.StatusMessage);
+        }
+
+        [Fact]
+        public async Task CheckForUpdates_UpdateAvailable_MapsVersionAndNotesIntoBanner()
+        {
+            var (vm, _, update) = CreateSut();
+            var notes = "## What's new\n\n* Release notes mapping\n* Banner shows markdown";
+            update.UpdateInfoResult = new UpdateInfo(
+                new VelopackAsset { Version = new NuGet.Versioning.NuGetVersion("1.5.0") },
+                isDowngrade: false,
+                null,
+                Array.Empty<VelopackAsset>());
+            update.PendingUpdateNotes = notes;
+
+            await vm.CheckForUpdatesCommand.ExecuteAsync(null);
+
+            Assert.Equal(1, update.DownloadCallCount);
+            Assert.Same(update.UpdateInfoResult, update.LastDownloadedUpdate);
+
+            Assert.NotNull(vm.AvailableUpdate);
+            Assert.Equal("1.5.0", vm.AvailableUpdate!.Version);
+            Assert.Equal(notes, vm.AvailableUpdate.NotesMarkdown);
+            Assert.Equal("Update 1.5.0 ready - restart to update", vm.StatusMessage);
+        }
+
+        [Fact]
+        public async Task CheckForUpdates_NoPendingNotes_BannerNotesAreEmpty()
+        {
+            var (vm, _, update) = CreateSut();
+            update.UpdateInfoResult = new UpdateInfo(
+                new VelopackAsset { Version = new NuGet.Versioning.NuGetVersion("2.0.0") },
+                isDowngrade: false,
+                null,
+                Array.Empty<VelopackAsset>());
+
+            await vm.CheckForUpdatesCommand.ExecuteAsync(null);
+
+            Assert.NotNull(vm.AvailableUpdate);
+            Assert.Equal(string.Empty, vm.AvailableUpdate!.NotesMarkdown);
         }
 
         private sealed class ThrowingEmailService : QuestLog.GUI.Interfaces.IEmailService
