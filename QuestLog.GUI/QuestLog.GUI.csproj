@@ -39,7 +39,7 @@
     <PackageReference Include="Velopack" Version="0.0.556" />
 
     <!-- Roslynator analyzers -->
-    <PackageReference Include="Roslynator.Analyzers" Version="3.1.0">
+    <PackageReference Include="Roslynator.Analyzers" Version="5.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
