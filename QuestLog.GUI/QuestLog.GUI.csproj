@@ -36,7 +36,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
 
     <!-- Auto Updates -->
-    <PackageReference Include="Velopack" Version="0.0.556" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
 
     <!-- Roslynator analyzers -->
     <PackageReference Include="Roslynator.Analyzers" Version="3.1.0">
