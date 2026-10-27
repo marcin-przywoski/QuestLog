@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
+    <!-- Benign: Roslynator.Analyzers 3.1.0 (via the GUI project ref) lifts
+         Microsoft.CodeAnalysis.* to 4.1.0 while BenchmarkDotNet's
+         CSharp.Scripting 3.8.0 declares =3.8.0; 4.1.0 is API-compatible. -->
+    <NoWarn>NU1608</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\QuestLog.GUI\QuestLog.GUI.csproj" />
+  </ItemGroup>
+</Project>
