@@ -2,18 +2,20 @@
 
 ## Project Overview
 
-QuestLog is a desktop email reader for **macOS Outlook**, built with **Avalonia 11 / .NET 6** using MVVM (CommunityToolkit.Mvvm source generators). It reads mail by executing embedded AppleScript templates through `/usr/bin/osascript`. Velopack provides auto-updates.
+QuestLog is a desktop email reader for **Outlook on macOS and Windows**, built with **Avalonia 11 / .NET 6** using MVVM (CommunityToolkit.Mvvm source generators). On macOS it reads mail by executing embedded AppleScript templates through `/usr/bin/osascript`; on Windows it drives classic desktop Outlook through late-bound COM (`Outlook.Application`). Velopack provides auto-updates.
 
-**Critical:** the app is macOS-only at runtime (`OperatingSystem.IsMacOS()` guard → `PlatformNotSupportedException` elsewhere), but builds and launches on Windows — service calls fail gracefully into the status bar.
+**Critical:** each `IEmailService` impl is platform-guarded (`OperatingSystem.IsMacOS()`/`IsWindows()` → `PlatformNotSupportedException` elsewhere). Linux launches but service calls fail gracefully into the status bar. On Windows only **classic desktop Outlook** works — the "New Outlook" client exposes no automation API and the service reports it as not installed.
 
 ## Architecture & Data Flow
 
 Single-project MVVM app — `QuestLog.slnx` contains only `QuestLog.GUI/QuestLog.GUI.csproj`.
 
 ```
-Toolbar command → IEmailService → embedded .applescript (__TOKEN__ substitution)
-  → /usr/bin/osascript -e <script> → stdout (<<EMAIL>> records, "||" fields)
-  → ParseEmails → ObservableCollection<Email> → compiled bindings
+Toolbar command → IEmailService (picked by OS in DI: Windows → WindowsOutlookService, else → AppleScriptOutlookService)
+  macOS: embedded .applescript (__TOKEN__ substitution) → /usr/bin/osascript -e <script>
+    → stdout (<<EMAIL>> records, "||" fields) → ParseEmails
+  Windows: Outlook COM via dynamic → MAPI namespace → Inbox Items (Restrict for unread)
+  → ObservableCollection<Email> → compiled bindings
 
 Manual check (toolbar button) → IUpdateService (VelopackUpdateService) → Velopack UpdateManager(GithubSource)
   → UpdateInfo → download → AvailableUpdate (Version + NotesMarkdown)
@@ -34,7 +36,7 @@ Manual check (toolbar button) → IUpdateService (VelopackUpdateService) → Vel
 |`QuestLog.GUI/ViewModels/`|VMs (`MainWindowViewModel`, `ViewModelBase`)|
 |`QuestLog.GUI/Views/`|AXAML views (`MainWindow.axaml` + trivial code-behind)|
 |`QuestLog.GUI/Models/`|`Email : ObservableObject` (only `IsRead` uses `SetProperty`; other props are plain); `AvailableUpdate` (plain: `Version` + `NotesMarkdown`)|
-|`QuestLog.GUI/Services/`|`AppleScriptOutlookService` — runtime `IEmailService` impl (process exec, wire parsing, token substitution); `VelopackUpdateService` — runtime `IUpdateService` impl (Velopack `UpdateManager` + `GithubSource`); `DesignTimeEmailService`/`DesignTimeUpdateService` — designer-only fakes returning `DesignData`|
+|`QuestLog.GUI/Services/`|`AppleScriptOutlookService` — macOS `IEmailService` impl (process exec, wire parsing, token substitution); `WindowsOutlookService` — Windows `IEmailService` impl (late-bound Outlook COM, `[SupportedOSPlatform("windows")]`); `VelopackUpdateService` — runtime `IUpdateService` impl (Velopack `UpdateManager` + `GithubSource`); `DesignTimeEmailService`/`DesignTimeUpdateService` — designer-only fakes returning `DesignData`|
 |`QuestLog.GUI/Interfaces/`|`IEmailService` (4 async methods; `GetEmailByIdAsync` currently unused); `IUpdateService` (`CheckForUpdatesAsync`/`DownloadUpdateAsync`/`ApplyUpdateAndRestartAsync` + `PendingUpdateNotes`)|
 |`QuestLog.GUI/Resources/AppleScripts/`|Embedded `*.applescript` templates (auto-embedded by csproj glob)|
 |`QuestLog.GUI/Converters/`|`BoolToFontWeightConverter` (unread = bold), registered app-wide|
@@ -71,6 +73,13 @@ Enforced by `.editorconfig` + CI `dotnet format` gate — **whitespace/formattin
 - Wire format is a contract: records separated by `<<EMAIL>>`, fields by `||`, exactly 7 fields in order `Id | Subject | Sender | SenderEmail | ReceivedDate | IsRead | Body` (split capped at 7 so `||` in body is absorbed; scripts also `sanitizeText` to strip separators). Keep scripts and `ParseEmails` in sync; malformed records are silently skipped.
 - `MarkAsRead` contract: script must return literal `true`/`false` (compared OrdinalIgnoreCase).
 - `ParseDate` tries CurrentCulture + `pl-PL` + 6 explicit formats; unparseable → `DateTime.MinValue` (never throws). Add new Outlook-localized formats to the array.
+
+**Windows Outlook conventions** (`WindowsOutlookService.cs`):
+
+- Late-bound COM (`Type.GetTypeFromProgID("Outlook.Application")` + `dynamic`) — no PIA/NuGet dependency; missing registration → `InvalidOperationException` (covers the "New Outlook" client, which has no automation surface). Class is `[SupportedOSPlatform("windows")]`.
+- All COM work runs inside `Task.Run` on a thread-pool thread; every RCW is `Marshal.ReleaseComObject`'d in `finally` (children first, then `session`, then `app`). `mapi.Logon` passes explicit `Type.Missing` args.
+- `Email.Id` is the MAPI `EntryID` — passed to `GetItemFromID` as a parameter (no script interpolation, so only non-blank is validated). `MarkAsReadAsync` sets `UnRead = false` + `Save()`; `COMException` (e.g. item deleted) → `false`.
+- Enumerates `Namespace.Stores` → `Store.GetDefaultFolder(olFolderInbox)` per store (mirrors the AppleScript "every folder named Inbox"), merges all stores and re-sorts by `ReceivedDate`, capping `count` per store before the final `Take`. Stores without an Inbox (archives/PSTs) are skipped without counting as failures. Unread filter = `Items.Restrict("[UnRead] = true")` (new RCW — release it); sort by `[ReceivedTime]` descending per store; items with `Class != olMail` (43) are skipped; per-item `COMException`/`RuntimeBinderException` skips that item like malformed records are skipped in `ParseEmails`; if every accessible store's items failed, `InvalidOperationException` surfaces instead of a fake empty inbox.
 
 **Update conventions** (`VelopackUpdateService.cs`):
 
@@ -123,8 +132,9 @@ CI/CodeQL triggers are **path-filtered to `**.cs`, `**.csproj`, `**.axaml`** —
 - `Email` model: only `IsRead` raises change notification; other properties are plain auto-props.
 - `GetEmailByIdAsync`/`GetEmailById.applescript` have no callers.
 - Velopack 0.0.556 API traps: no parameterless `UpdateManager()` ctor (must pass a feed/`IUpdateSource`); `VelopackAsset` has **no `Id`** property; `ApplyUpdatesAndRestart(string[])` overload is deprecated — use `ApplyUpdatesAndRestart(VelopackAsset, string[])`.
-- CD ships a `win-x64` Velopack package for a macOS-only app.
+- CD ships a `win-x64` Velopack package: Windows is a real target via `WindowsOutlookService`. A macOS build has never been produced (osascript path is untested end-to-end in a packaged release).
 - `.vscode/settings.json` hardcodes author-machine absolute paths (`axaml.selectedSolution`, dotrush); `QuestLog.GUI/.vscode/settings.json` has a stale solution path.
 - Design-time `MainWindow.axaml` sample emails use non-numeric `Id`s (`email-001`) — would fail `ValidateMessageId` if MarkAsRead ran on them; harmless at design time.
+- `WindowsOutlookService` `Email.Id` values are MAPI `EntryID`s — stable within a session but can change if the item moves folders or the store reindexes; never persist them across restarts.
 - `BuildInfo.targets` — untracked dead file, would emit `namespace SharpGallery`; ignore/delete.
 - `dotnet format` enforces whitespace only; every style rule (`var`, naming, braces) is suggestion-level — no gate.
