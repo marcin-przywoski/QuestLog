@@ -22,7 +22,7 @@
     <Grid RowDefinitions="Auto,Auto,*,Auto">
         
         <!-- Toolbar -->
-        <Border Grid.Row="0" Background="#f0f0f0" Padding="10">
+        <Border Grid.Row="0" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="10">
             <StackPanel Orientation="Horizontal" Spacing="10">
                 <Button Content="Load Emails" 
                         Command="{Binding LoadEmailsCommand}"
@@ -60,7 +60,7 @@
         </Border>
 
         <!-- Update notice (release notes) - shown above the emails, never replaces them -->
-        <Border Grid.Row="1" Background="#fffbe6" BorderBrush="#e6d9a8" BorderThickness="0,1,0,1" Padding="16,10"
+        <Border Grid.Row="1" Background="{DynamicResource SystemControlHighlightListAccentLowBrush}" BorderBrush="{DynamicResource SystemControlForegroundAccentBrush}" BorderThickness="0,1,0,1" Padding="16,10"
                 IsVisible="{Binding AvailableUpdate, Converter={x:Static converters:ObjectConverters.IsNotNull}}">
             <ScrollViewer MaxHeight="180" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Spacing="6" DataContext="{Binding AvailableUpdate}">
@@ -70,7 +70,7 @@
                     <TextBlock Text="{Binding NotesMarkdown}"
                                TextWrapping="Wrap"
                                FontSize="12"
-                               Foreground="Gray"/>
+                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                 </StackPanel>
             </ScrollViewer>
         </Border>
@@ -79,13 +79,13 @@
         <Grid Grid.Row="2" ColumnDefinitions="350,*">
             
             <!-- Email List -->
-            <Border Grid.Column="0" BorderBrush="#e0e0e0" BorderThickness="0,0,1,0">
+            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,1,0">
                 <ListBox ItemsSource="{Binding Emails}" 
                          SelectedItem="{Binding SelectedEmail}"
-                         Background="White">
+                         Background="{DynamicResource SystemRegionBrush}">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="models:Email">
-                            <Border Padding="10" BorderBrush="#e8e8e8" BorderThickness="0,0,0,1">
+                            <Border Padding="10" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="0,0,0,1">
                                 <StackPanel Spacing="4">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <TextBlock Grid.Column="0" 
@@ -94,14 +94,14 @@
                                                    TextTrimming="CharacterEllipsis"/>
                                         <TextBlock Grid.Column="1" 
                                                    Text="{Binding ReceivedDate, StringFormat={}{0:MM/dd HH:mm}}"
-                                                   Foreground="Gray"
+                                                   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                    FontSize="11"/>
                                     </Grid>
                                     <TextBlock Text="{Binding Subject}" 
                                                FontWeight="{Binding IsRead, Converter={StaticResource BoolToFontWeightConverter}}"
                                                TextTrimming="CharacterEllipsis"/>
                                     <TextBlock Text="{Binding Body}" 
-                                               Foreground="Gray"
+                                               Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
                                                FontSize="12"
                                                MaxLines="2"
                                                TextTrimming="CharacterEllipsis"/>
@@ -113,7 +113,7 @@
             </Border>
 
             <!-- Email Detail -->
-            <Border Grid.Column="1" Background="White" Padding="20">
+            <Border Grid.Column="1" Background="{DynamicResource SystemRegionBrush}" Padding="20">
                 <ScrollViewer IsVisible="{Binding SelectedEmail, Converter={x:Static converters:ObjectConverters.IsNotNull}}">
                     <StackPanel Spacing="15" DataContext="{Binding SelectedEmail}">
                         <TextBlock Text="{Binding Subject}" 
@@ -123,7 +123,7 @@
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="From:" FontWeight="SemiBold"/>
                             <TextBlock Text="{Binding Sender}"/>
-                            <TextBlock Text="{Binding SenderEmail, StringFormat='&lt;{0}&gt;'}" Foreground="Gray"/>
+                            <TextBlock Text="{Binding SenderEmail, StringFormat='&lt;{0}&gt;'}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <TextBlock Text="Date:" FontWeight="SemiBold"/>
@@ -139,8 +139,8 @@
         </Grid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="3" Background="#f0f0f0" Padding="10,5">
-            <TextBlock Text="{Binding StatusMessage}" Foreground="Gray"/>
+        <Border Grid.Row="3" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="10,5">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"/>
         </Border>
     </Grid>
 
