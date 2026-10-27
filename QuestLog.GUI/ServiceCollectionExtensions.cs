@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.DependencyInjection;
 using QuestLog.GUI.Interfaces;
 using QuestLog.GUI.Services;
@@ -13,7 +14,9 @@ namespace QuestLog.GUI
     {
         public static IServiceCollection AddAppServices(this IServiceCollection services)
         {
-            services.AddSingleton<IEmailService, AppleScriptOutlookService>();
+            services.AddSingleton<IEmailService>(_ => OperatingSystem.IsWindows()
+                ? (IEmailService)new WindowsOutlookService()
+                : new AppleScriptOutlookService());
 
             // Factory registrations: both types expose multiple public ctors, which the
             // Microsoft DI container treats as ambiguous, and the VM's parameterless ctor
