@@ -7,12 +7,12 @@
 [![Dev release](https://img.shields.io/github/v/release/marcin-przywoski/QuestLog?include_prereleases&label=dev)](https://github.com/marcin-przywoski/QuestLog/releases)
 [![.NET 6](https://img.shields.io/badge/.NET-6.0-512BD4)](https://dotnet.microsoft.com/)
 [![Avalonia 11](https://img.shields.io/badge/Avalonia-11-8B44AC)](https://avaloniaui.net/)
-[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)](https://www.apple.com/macos/)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-lightgrey)](#requirements)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/marcin-przywoski/QuestLog)](https://github.com/marcin-przywoski/QuestLog/commits)
 [![Repo size](https://img.shields.io/github/repo-size/marcin-przywoski/QuestLog)]()
 [![Downloads](https://img.shields.io/github/downloads/marcin-przywoski/QuestLog/total)](https://github.com/marcin-przywoski/QuestLog/releases)
 
-A macOS desktop email client for Microsoft Outlook, built with [Avalonia UI](https://avaloniaui.net/) and .NET 6. QuestLog reads your Outlook inbox through AppleScript automation and presents it in a clean, native-feeling interface.
+A desktop email client for Microsoft Outlook on macOS and Windows, built with [Avalonia UI](https://avaloniaui.net/) and .NET 6. QuestLog reads your Outlook inbox through AppleScript automation (macOS) or Outlook COM automation (Windows) and presents it in a clean, native-feeling interface.
 
 ## Features
 
@@ -27,11 +27,11 @@ A macOS desktop email client for Microsoft Outlook, built with [Avalonia UI](htt
 
 | Requirement | Notes |
 |---|---|
-| macOS | Outlook integration runs through `/usr/bin/osascript`; the app throws `PlatformNotSupportedException` on other OSes when loading mail |
-| Microsoft Outlook for Mac | Must be installed and configured with at least one account |
+| macOS or Windows | macOS: Outlook integration runs through `/usr/bin/osascript`; Windows: through classic Outlook's COM automation. Mail loading throws `PlatformNotSupportedException` on other OSes |
+| Microsoft Outlook | macOS: Outlook for Mac; Windows: **classic desktop Outlook** — the "New Outlook" client exposes no automation API |
 | .NET 6 SDK | Required to build from source |
 
-The first time QuestLog queries Outlook, macOS will prompt for Automation permission — grant it to allow AppleScript access.
+On macOS, the first time QuestLog queries Outlook the OS will prompt for Automation permission — grant it to allow AppleScript access. On Windows, classic Outlook must be installed and configured; if Outlook shows a programmatic-access security prompt, allow it and retry.
 
 ## Getting Started
 
@@ -79,7 +79,8 @@ QuestLog.GUI/
 │   ├── IEmailService.cs          # Email provider abstraction
 │   └── IUpdateService.cs         # Update provider abstraction
 ├── Services/
-│   ├── AppleScriptOutlookService.cs  # Outlook access via osascript
+│   ├── AppleScriptOutlookService.cs  # macOS: Outlook access via osascript
+│   ├── WindowsOutlookService.cs      # Windows: Outlook access via COM automation
 │   ├── VelopackUpdateService.cs      # Update checks/downloads via Velopack + GitHub releases
 │   └── DesignTime*Service.cs         # Designer-only fakes returning DesignData samples
 ├── Converters/
@@ -90,7 +91,7 @@ QuestLog.GUI/
     └── MarkAsRead.applescript
 ```
 
-**How Outlook integration works:** `AppleScriptOutlookService` loads embedded AppleScript templates, substitutes parameters (message count, unread filter, message id), and executes them via `/usr/bin/osascript -e`. Scripts return `||`-delimited records separated by `<<EMAIL>>`, which the service parses into `Email` models. `IEmailService` keeps the provider swappable — a Windows implementation (e.g. Outlook COM interop or Microsoft Graph) can be added without touching the UI.
+**How Outlook integration works:** the DI container picks `IEmailService` by OS. On macOS, `AppleScriptOutlookService` loads embedded AppleScript templates, substitutes parameters (message count, unread filter, message id), and executes them via `/usr/bin/osascript -e`; scripts return `||`-delimited records separated by `<<EMAIL>>`, which the service parses into `Email` models. On Windows, `WindowsOutlookService` drives classic Outlook through late-bound COM (`Outlook.Application` → MAPI namespace → Inbox items, `Restrict` for the unread filter), mapping `MailItem`s into `Email` models with the `EntryID` as the message id. `IEmailService` keeps the provider swappable without touching the UI.
 
 **How updates work:** `VelopackUpdateService` wraps a Velopack `UpdateManager` backed by `GithubSource`, which reads the releases published by the CD pipeline. On demand it checks the feed for the channel the install was packed with, downloads the update (delta packages when available), and maps it into an `AvailableUpdate` shown in the banner. **Restart to update** applies the downloaded package and relaunches.
 
